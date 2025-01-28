@@ -34,6 +34,9 @@ export default defineConfig({
         },
       },
     },
+    sourcemap: false,
+    manifest: true,
+    ssrManifest: true
   },
   resolve: {
     alias: {
@@ -49,5 +52,6 @@ export default defineConfig({
       'notistack',
       'date-fns'
     ]
-  }
+  },
+  base: '/'
 })

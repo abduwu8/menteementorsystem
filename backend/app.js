@@ -57,7 +57,15 @@ mongoose.connection.on('reconnected', () => {
   console.log('MongoDB reconnected');
 });
 
-// API Routes - all API routes should be prefixed with /api
+// Production static file serving - this should come BEFORE API routes
+if (process.env.NODE_ENV === 'production') {
+  console.log('Running in production mode');
+  const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
+  console.log('Frontend build path:', frontendBuildPath);
+  app.use(express.static(frontendBuildPath));
+}
+
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/mentees', require('./routes/mentees'));
@@ -81,28 +89,6 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Express server is working' });
 });
 
-// Production setup for serving React app
-if (process.env.NODE_ENV === 'production') {
-  console.log('Running in production mode');
-  
-  // Serve static files
-  const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
-  console.log('Frontend build path:', frontendBuildPath);
-  
-  // Serve static files
-  app.use(express.static(frontendBuildPath));
-  
-  // Serve index.html for all non-API routes
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      console.log('Serving index.html for path:', req.path);
-      res.sendFile(path.join(frontendBuildPath, 'index.html'));
-    } else {
-      next();
-    }
-  });
-}
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
@@ -112,15 +98,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler - should be after all other routes
+// Final catch-all route handler for serving index.html
+// This should be AFTER API routes but BEFORE 404 handler
+if (process.env.NODE_ENV === 'production') {
+  app.get('/*', (req, res) => {
+    const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+}
+
+// 404 handler - only for API routes in production
 app.use((req, res) => {
-  console.log('404 Not Found:', req.path);
   if (req.path.startsWith('/api')) {
     res.status(404).json({ message: 'API endpoint not found' });
-  } else if (process.env.NODE_ENV === 'production') {
-    // In production, serve index.html for non-API routes that weren't caught earlier
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-  } else {
+  } else if (process.env.NODE_ENV !== 'production') {
     res.status(404).json({ message: 'Not Found' });
   }
 });
