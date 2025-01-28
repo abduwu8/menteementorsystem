@@ -17,15 +17,16 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 
-// Configure CORS for development
-if (process.env.NODE_ENV !== 'production') {
-  app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
-}
+// Configure CORS
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://oviedu.onrender.com'] 
+    : ['http://localhost:3000', 'http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 
 // Connect to MongoDB with enhanced options
 mongoose.connect(process.env.MONGODB_URI, {
@@ -56,14 +57,7 @@ mongoose.connection.on('reconnected', () => {
   console.log('MongoDB reconnected');
 });
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React app
-  const frontendBuildPath = path.join(__dirname, '../frontend/dist');
-  app.use(express.static(frontendBuildPath));
-}
-
-// API Routes
+// API Routes - all API routes should be prefixed with /api
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/mentees', require('./routes/mentees'));
@@ -87,30 +81,52 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Express server is working' });
 });
 
-// Handle React routing in production
+// Production setup for serving React app
 if (process.env.NODE_ENV === 'production') {
-  // This should be the LAST route
-  app.get('/*', (req, res) => {
-    const frontendBuildPath = path.join(__dirname, '../frontend/dist');
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  console.log('Running in production mode');
+  
+  // Serve static files
+  const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
+  console.log('Frontend build path:', frontendBuildPath);
+  
+  // Serve static files
+  app.use(express.static(frontendBuildPath));
+  
+  // Serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      console.log('Serving index.html for path:', req.path);
+      res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    } else {
+      next();
+    }
   });
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err.stack);
   res.status(500).json({
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
-// 404 handler
+// 404 handler - should be after all other routes
 app.use((req, res) => {
-  res.status(404).json({ message: 'Not Found' });
+  console.log('404 Not Found:', req.path);
+  if (req.path.startsWith('/api')) {
+    res.status(404).json({ message: 'API endpoint not found' });
+  } else if (process.env.NODE_ENV === 'production') {
+    // In production, serve index.html for non-API routes that weren't caught earlier
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  } else {
+    res.status(404).json({ message: 'Not Found' });
+  }
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log('Node environment:', process.env.NODE_ENV);
 }); 
