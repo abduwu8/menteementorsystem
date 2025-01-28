@@ -4,7 +4,14 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxImportSource: '@emotion/react',
+      babel: {
+        plugins: ['@emotion/babel-plugin']
+      }
+    })
+  ],
   server: {
     proxy: {
       '/api': {
@@ -22,6 +29,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/x-date-pickers', '@emotion/react', '@emotion/styled'],
+          utils: ['date-fns', 'notistack', 'axios']
         },
       },
     },
@@ -31,4 +40,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: [
+      '@emotion/react',
+      '@emotion/styled',
+      '@mui/material',
+      '@mui/x-date-pickers',
+      'notistack',
+      'date-fns'
+    ]
+  }
 })
