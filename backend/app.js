@@ -3,13 +3,14 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 
 // Debug middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
@@ -57,12 +58,37 @@ mongoose.connection.on('reconnected', () => {
   console.log('MongoDB reconnected');
 });
 
-// Production static file serving - this should come BEFORE API routes
+// Production static file serving
 if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode');
   const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
   console.log('Frontend build path:', frontendBuildPath);
+  
+  // Check if the build directory exists
+  if (fs.existsSync(frontendBuildPath)) {
+    console.log('Frontend build directory exists');
+    // Check for index.html
+    const indexPath = path.join(frontendBuildPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      console.log('index.html found in build directory');
+    } else {
+      console.error('index.html not found in build directory');
+    }
+    // List files in build directory
+    const files = fs.readdirSync(frontendBuildPath);
+    console.log('Files in build directory:', files);
+  } else {
+    console.error('Frontend build directory does not exist');
+  }
+
+  // Serve static files
   app.use(express.static(frontendBuildPath));
+
+  // Explicit root route handler
+  app.get('/', (req, res) => {
+    console.log('Serving root path');
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
 }
 
 // API Routes
@@ -98,16 +124,26 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Final catch-all route handler for serving index.html
-// This should be AFTER API routes but BEFORE 404 handler
+// Catch-all handler for React app in production
 if (process.env.NODE_ENV === 'production') {
-  app.get('/*', (req, res) => {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    console.log('Serving index.html for path:', req.path);
     const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    const indexPath = path.join(frontendBuildPath, 'index.html');
+    
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error('index.html not found when serving:', req.path);
+      res.status(404).send('Application not found');
+    }
   });
 }
 
-// 404 handler - only for API routes in production
+// 404 handler for API routes
 app.use((req, res) => {
   if (req.path.startsWith('/api')) {
     res.status(404).json({ message: 'API endpoint not found' });
@@ -120,4 +156,13 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Node environment:', process.env.NODE_ENV);
+  
+  // Log current working directory and absolute path
+  console.log('Current working directory:', process.cwd());
+  console.log('Application directory:', __dirname);
+  
+  if (process.env.NODE_ENV === 'production') {
+    const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
+    console.log('Absolute frontend build path:', frontendBuildPath);
+  }
 }); 
