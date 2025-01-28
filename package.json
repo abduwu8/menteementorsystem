@@ -5,11 +5,9 @@
   "main": "backend/index.js",
   "scripts": {
     "start": "cd backend && npm start",
-    "install-frontend": "cd frontend && npm install --legacy-peer-deps",
-    "install-backend": "cd backend && npm install --legacy-peer-deps",
+    "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
     "build-frontend": "cd frontend && npm run build",
-    "build": "npm install && npm run install-frontend && npm run build-frontend && npm run install-backend",
-    "postinstall": "npm run build",
+    "build": "npm run install-deps && npm run build-frontend",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
