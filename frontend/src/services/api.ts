@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Session } from './api/dashboardService';
 
 // Get the current domain and protocol
 const hostname = window.location.hostname;
@@ -197,8 +198,21 @@ export const menteeService = {
 // Session services
 export const sessionService = {
   getUpcomingSessions: async () => {
-    const response = await api.get('/sessionrequests/upcoming');
-    return response.data;
+    try {
+      const response = await api.get('/sessionrequests/upcoming');
+      // Validate and filter out invalid session data
+      return response.data.filter((session: Session) => 
+        session && 
+        session._id && 
+        session.mentee && 
+        session.mentee.name && 
+        session.date && 
+        session.timeSlot
+      );
+    } catch (error) {
+      console.error('Error in getUpcomingSessions:', error);
+      throw error;
+    }
   },
 
   getAvailableSessions: async () => {
@@ -231,8 +245,26 @@ export const sessionService = {
   },
 
   getSessionRequests: async () => {
-    const response = await api.get('/sessions/requests');
-    return response.data;
+    try {
+      console.log('Calling getSessionRequests endpoint...');
+      const response = await api.get('/sessions/requests');
+      // Validate and filter out invalid session data
+      const validRequests = response.data.filter((request: Session) => 
+        request && 
+        request._id && 
+        request.mentee && 
+        request.mentee.name && 
+        request.date && 
+        request.timeSlot &&
+        request.timeSlot.startTime &&
+        request.timeSlot.endTime
+      );
+      console.log('Session requests response:', validRequests);
+      return validRequests;
+    } catch (error) {
+      console.error('Error in getSessionRequests:', error);
+      throw error;
+    }
   },
 
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
