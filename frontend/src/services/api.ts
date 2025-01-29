@@ -1,8 +1,12 @@
 import axios from 'axios';
 
+// Determine the base URL based on the environment
+const baseURL = import.meta.env.VITE_NODE_ENV === 'production' 
+  ? '/api'  // In production, use relative path
+  : 'http://localhost:5000/api';  // In development, use localhost
+
 const api = axios.create({
-  // Use relative path since backend is served from the same domain
-  baseURL: '/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
