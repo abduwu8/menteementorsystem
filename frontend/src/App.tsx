@@ -25,7 +25,7 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<Navigate to="/login/mentor" replace />} />
+          <Route path="/" element={<MentorLogin />} />
           <Route path="/login/mentor" element={<MentorLogin />} />
           <Route path="/login/mentee" element={<MenteeLogin />} />
           <Route path="/register/mentor" element={<MentorRegister />} />
@@ -147,7 +147,7 @@ function App() {
             }
           />
 
-          {/* Catch all route */}
+          {/* Catch all route - redirect to mentor login */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

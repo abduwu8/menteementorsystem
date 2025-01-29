@@ -58,7 +58,31 @@ mongoose.connection.on('reconnected', () => {
   console.log('MongoDB reconnected');
 });
 
-// Production static file serving
+// API Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/mentors', require('./routes/mentors'));
+app.use('/api/mentees', require('./routes/mentees'));
+app.use('/api/sessions', require('./routes/sessions'));
+app.use('/api/sessionrequests', require('./routes/sessionrequests'));
+app.use('/api/lecture-requests', require('./routes/lectureRequests'));
+app.use('/api/chat', require('./routes/chat'));
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ 
+    status: 'healthy',
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Express server is working' });
+});
+
+// Production setup
 if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode');
   const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
@@ -84,54 +108,12 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files
   app.use(express.static(frontendBuildPath));
 
-  // Explicit root route handler
-  app.get('/', (req, res) => {
-    console.log('Serving root path');
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
-  });
-}
-
-// API Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/mentors', require('./routes/mentors'));
-app.use('/api/mentees', require('./routes/mentees'));
-app.use('/api/sessions', require('./routes/sessions'));
-app.use('/api/sessionrequests', require('./routes/sessionrequests'));
-app.use('/api/lecture-requests', require('./routes/lectureRequests'));
-app.use('/api/chat', require('./routes/chat'));
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  res.json({ 
-    status: 'healthy',
-    database: dbStatus,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Express server is working' });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Catch-all handler for React app in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res, next) => {
+  // Handle all routes including root path
+  app.get('/*', (req, res) => {
     if (req.path.startsWith('/api')) {
       return next();
     }
     console.log('Serving index.html for path:', req.path);
-    const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
     const indexPath = path.join(frontendBuildPath, 'index.html');
     
     if (fs.existsSync(indexPath)) {
@@ -142,6 +124,15 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
 }
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
 // 404 handler for API routes
 app.use((req, res) => {
