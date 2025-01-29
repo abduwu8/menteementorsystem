@@ -8,56 +8,36 @@ require('dotenv').config();
 
 const app = express();
 
-// Configure CORS - Must be before other middleware
-const corsOptions = {
-  origin: true, // Allow all origins since we're handling same-origin in production
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
-  exposedHeaders: ['Set-Cookie'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-app.use(cors(corsOptions));
-
-// Debug middleware
+// Debug middleware to log requests
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Origin:', req.headers.origin);
-  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('Request details:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    environment: process.env.NODE_ENV
+  });
   next();
 });
 
-// Other Middleware
+// Basic middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// Connect to MongoDB with enhanced options
+// Configure CORS
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+}));
+
+// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  retryWrites: true,
-  w: 'majority',
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
 })
 .then(() => console.log('Connected to MongoDB'))
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-});
-
-// Handle MongoDB connection events
-mongoose.connection.on('error', err => {
-  console.error('MongoDB connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected. Attempting to reconnect...');
-});
-
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected');
-});
+.catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -70,10 +50,9 @@ app.use('/api/chat', require('./routes/chat'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.json({ 
     status: 'healthy',
-    database: dbStatus,
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
 });
@@ -82,63 +61,25 @@ app.get('/api/health', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode');
   
-  // Resolve paths
-  const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
-  console.log('Frontend build path:', frontendBuildPath);
+  // Serve static files from frontend/dist
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
   
-  // Verify build directory exists
-  if (fs.existsSync(frontendBuildPath)) {
-    console.log('Frontend build directory exists');
-    
-    // Serve static files
-    app.use(express.static(frontendBuildPath));
-
-    // Serve index.html for all non-API routes (SPA support)
-    app.get('/*', (req, res, next) => {
-      if (req.path.startsWith('/api')) {
-        return next();
-      }
-      
-      const indexPath = path.join(frontendBuildPath, 'index.html');
-      console.log('Attempting to serve:', indexPath);
-      
-      try {
-        if (fs.existsSync(indexPath)) {
-          res.sendFile(indexPath);
-        } else {
-          console.error('index.html not found');
-          res.status(404).send('Frontend file not found');
-        }
-      } catch (error) {
-        console.error('Error serving index.html:', error);
-        res.status(500).send('Error serving frontend');
-      }
-    });
-  } else {
-    console.error('Frontend build directory not found');
-    app.get('/*', (req, res, next) => {
-      if (req.path.startsWith('/api')) {
-        return next();
-      }
-      res.status(404).send('Frontend not built');
-    });
-  }
+  // Handle SPA routing - serve index.html for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.url.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
+  console.error('Error:', err);
   res.status(500).json({
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
-});
-
-// 404 handler for API routes
-app.use((req, res) => {
-  if (req.path.startsWith('/api')) {
-    res.status(404).json({ message: 'API endpoint not found' });
-  }
 });
 
 const PORT = process.env.PORT || 5000;
@@ -146,5 +87,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Node environment:', process.env.NODE_ENV);
   console.log('Current working directory:', process.cwd());
-  console.log('Application directory:', __dirname);
 });
