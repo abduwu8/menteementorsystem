@@ -9,7 +9,7 @@ interface SessionRequest {
     name: string;
     email: string;
     currentRole: string;
-  };
+  } | null;
   date: string;
   timeSlot: {
     startTime: string;
@@ -44,22 +44,21 @@ const SessionRequests = (): JSX.Element => {
       setError('');
       const data = await sessionService.getSessionRequests();
       
-      if (!Array.isArray(data)) {
-        console.error('Invalid response format:', data);
-        throw new Error('Invalid response format from server');
-      }
+      // Validate and filter out invalid session data
+      const validRequests = data.filter((request: SessionRequest) => 
+        request && 
+        request._id && 
+        request.date && 
+        request.timeSlot &&
+        request.timeSlot.startTime &&
+        request.timeSlot.endTime
+      );
 
-      setRequests(data);
+      console.log('Filtered requests:', validRequests);
+      setRequests(validRequests);
     } catch (err: any) {
       console.error('Error fetching requests:', err);
-      const errorMessage = err.message || 'Failed to fetch session requests';
-      setError(errorMessage);
-      
-      // If unauthorized, redirect to login
-      if (err.response?.status === 401) {
-        navigate('/login');
-      }
-      
+      setError(err.message || 'Failed to fetch session requests');
       setRequests([]);
     } finally {
       setIsLoading(false);
@@ -68,11 +67,11 @@ const SessionRequests = (): JSX.Element => {
 
   const handleRequest = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
-      setError(''); // Clear any previous errors
+      setError('');
       console.log(`Attempting to ${status} session request:`, requestId);
       
-      const response = await sessionService.handleSessionRequest(requestId, status);
-      console.log('Response from handleSessionRequest:', response);
+      await sessionService.handleSessionRequest(requestId, status);
+      console.log(`Session request ${status} successfully`);
       
       // Update the UI only after successful response
       setRequests(prevRequests => 
@@ -82,23 +81,11 @@ const SessionRequests = (): JSX.Element => {
             : req
         ).filter(req => !(req._id === requestId && status === 'rejected'))
       );
-
-      // Show success message
-      console.log(`Session request ${status} successfully`);
       
     } catch (err: any) {
       console.error('Error handling request:', err);
-      
-      // Set appropriate error message based on the error
-      if (err.response?.status === 401) {
-        navigate('/login');
-        return;
-      }
-      
-      const errorMessage = err.message || `Failed to ${status} request`;
-      setError(errorMessage);
-      
-      // Refresh the requests list to ensure UI is in sync with backend
+      setError(err.message || `Failed to ${status} request`);
+      // Refresh the requests list to ensure UI is in sync
       await fetchRequests();
     }
   };
@@ -137,7 +124,7 @@ const SessionRequests = (): JSX.Element => {
     <div className="space-y-4">
       {requests.map((request) => {
         // Skip rendering if essential data is missing
-        if (!request || !request.mentee) {
+        if (!request) {
           return null;
         }
 
@@ -145,8 +132,12 @@ const SessionRequests = (): JSX.Element => {
           <div key={request._id} className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">{request.mentee?.name || 'Unknown Mentee'}</h3>
-                <p className="text-gray-600">{request.mentee?.currentRole || 'Role not specified'}</p>
+                <h3 className="text-lg font-semibold">
+                  {request.mentee?.name || 'Unknown Mentee'}
+                </h3>
+                <p className="text-gray-600">
+                  {request.mentee?.currentRole || 'Role not specified'}
+                </p>
               </div>
               <span className="text-sm text-gray-500">
                 {new Date(request.createdAt).toLocaleDateString()}
