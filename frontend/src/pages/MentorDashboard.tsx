@@ -71,15 +71,26 @@ const MentorDashboard: React.FC = () => {
       await dashboardService.completeSession(sessionId);
       console.log('Session completed successfully');
       
-      // Remove the completed session from the list
-      setUpcomingSessions(prev => prev.filter(session => session._id !== sessionId));
+      // Update the local state to remove the completed session
+      setUpcomingSessions(prevSessions => {
+        const updatedSessions = prevSessions.filter(session => session._id !== sessionId);
+        console.log('Updated sessions after completion:', updatedSessions);
+        return updatedSessions;
+      });
+
+      // No need to fetch immediately since we've already updated the UI
+      // Schedule a background refresh after a short delay
+      setTimeout(() => {
+        fetchDashboardData().catch(err => {
+          console.error('Error refreshing dashboard data:', err);
+        });
+      }, 1000);
       
     } catch (err: any) {
       console.error('Error completing session:', err);
-      // Show error message to user
       setError(err.message || 'Failed to complete session. Please try again.');
       
-      // Refresh the sessions list to ensure UI is in sync with backend
+      // Refresh data if there was an error to ensure UI is in sync
       await fetchDashboardData();
     } finally {
       setCompletingSession(null);

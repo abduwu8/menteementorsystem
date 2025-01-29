@@ -247,7 +247,7 @@ export const sessionService = {
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
-      const response = await api.get('/sessions/requests');
+      const response = await api.get('/sessionrequests');
       
       // Validate and filter out invalid session data
       const validRequests = response.data.filter((request: Session) => 
@@ -274,8 +274,7 @@ export const sessionService = {
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Handling session request:', { requestId, status });
-      // Update to use the same base path as getSessionRequests
-      const response = await api.put(`/sessions/requests/${requestId}`, { status });
+      const response = await api.put(`/sessionrequests/${requestId}`, { status });
       console.log('Session request handled successfully:', response.data);
       return response.data;
     } catch (error: any) {
@@ -286,6 +285,23 @@ export const sessionService = {
         throw new Error('Session request not found. It may have been cancelled or already handled.');
       }
       throw new Error(error.response?.data?.message || 'Failed to handle session request');
+    }
+  },
+
+  completeSession: async (sessionId: string) => {
+    try {
+      console.log('Completing session:', sessionId);
+      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
+      console.log('Session completed successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in completeSession:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to complete this session. Please make sure you are logged in as a mentor.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session not found. It may have been already completed or cancelled.');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to complete session. Please try again.');
     }
   },
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { sessionService } from '../api';
 
 // Get the current domain and environment
 const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
@@ -119,27 +120,8 @@ const dashboardService = {
     }
   },
 
-  // Mark session as completed
-  completeSession: async (sessionId: string) => {
-    try {
-      if (!sessionId) {
-        throw new Error('Session ID is required');
-      }
-      console.log('Completing session:', sessionId);
-      // Update to use the correct endpoint
-      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
-      console.log('Session completed successfully:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error in completeSession:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to complete this session. Please make sure you are logged in as a mentor.');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session not found. It may have been already completed or cancelled.');
-      }
-      throw new Error(error.response?.data?.message || 'Failed to complete session. Please try again.');
-    }
-  }
+  // Use sessionService for completing sessions
+  completeSession: sessionService.completeSession
 };
 
 export type { DashboardStats, Session };
