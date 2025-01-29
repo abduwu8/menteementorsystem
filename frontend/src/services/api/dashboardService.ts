@@ -56,6 +56,33 @@ interface DashboardStats {
   activeMentees: number;
 }
 
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+}
+
+interface Session {
+  _id: string;
+  mentee: {
+    _id: string;
+    name: string;
+    email: string;
+    currentRole: string;
+  };
+  mentor: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  date: string;
+  timeSlot: TimeSlot;
+  topic: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
 const dashboardService = {
   // Get mentor's dashboard statistics
   getMentorStats: async (): Promise<DashboardStats> => {
@@ -69,10 +96,23 @@ const dashboardService = {
   },
 
   // Get mentor's upcoming sessions
-  getUpcomingSessions: async () => {
+  getUpcomingSessions: async (): Promise<Session[]> => {
     try {
+      console.log('Fetching upcoming sessions...');
       const response = await api.get('/sessionrequests/upcoming');
-      return response.data;
+      
+      // Validate and filter out invalid session data
+      const sessions = response.data.filter((session: Session) => 
+        session && 
+        session._id && 
+        session.mentee && 
+        session.mentee.name && 
+        session.date && 
+        session.timeSlot
+      );
+
+      console.log('Filtered sessions:', sessions);
+      return sessions;
     } catch (error) {
       console.error('Error in getUpcomingSessions:', error);
       throw error;
@@ -82,6 +122,9 @@ const dashboardService = {
   // Mark session as completed
   completeSession: async (sessionId: string) => {
     try {
+      if (!sessionId) {
+        throw new Error('Session ID is required');
+      }
       const response = await api.post(`/sessions/${sessionId}/complete`);
       return response.data;
     } catch (error) {
@@ -91,5 +134,5 @@ const dashboardService = {
   }
 };
 
-export type { DashboardStats };
+export type { DashboardStats, Session };
 export default dashboardService; 

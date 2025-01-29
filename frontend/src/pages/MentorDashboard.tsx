@@ -159,6 +159,7 @@ const MentorDashboard: React.FC = () => {
                 </div>
               ) : (
                 upcomingSessions
+                  .filter(session => session && session.mentee)
                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                   .map((session) => (
                     <div 
@@ -170,10 +171,14 @@ const MentorDashboard: React.FC = () => {
                           <RiUserLine className="text-xl text-indigo-600" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-800">{session.mentee.name}</h3>
-                          <p className="text-sm text-gray-600">{session.topic}</p>
+                          <h3 className="font-medium text-gray-800">
+                            {session.mentee?.name || 'Unknown Mentee'}
+                          </h3>
+                          <p className="text-sm text-gray-600">{session.topic || 'No Topic'}</p>
                           <div className="flex items-center space-x-2 mt-1">
-                            <span className="text-xs text-gray-500">{session.mentee.currentRole}</span>
+                            <span className="text-xs text-gray-500">
+                              {session.mentee?.currentRole || 'Role not specified'}
+                            </span>
                             <span className="text-gray-300">•</span>
                             <span className="text-xs text-gray-500">
                               {new Date(session.date).toLocaleDateString('en-US', {
@@ -184,7 +189,7 @@ const MentorDashboard: React.FC = () => {
                             </span>
                             <span className="text-gray-300">•</span>
                             <span className="text-xs text-gray-500">
-                              {session.timeSlot.startTime} - {session.timeSlot.endTime}
+                              {session.timeSlot?.startTime || '--:--'} - {session.timeSlot?.endTime || '--:--'}
                             </span>
                           </div>
                         </div>
