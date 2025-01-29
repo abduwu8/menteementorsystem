@@ -85,39 +85,76 @@ app.get('/api/test', (req, res) => {
 // Production setup
 if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode');
-  const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
-  console.log('Frontend build path:', frontendBuildPath);
   
-  // Check if the build directory exists
-  if (fs.existsSync(frontendBuildPath)) {
-    console.log('Frontend build directory exists');
-    const indexPath = path.join(frontendBuildPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      console.log('index.html found in build directory');
+  // Resolve paths
+  const rootDir = path.resolve(__dirname, '..');
+  const frontendBuildPath = path.join(rootDir, 'frontend', 'dist');
+  const indexPath = path.join(frontendBuildPath, 'index.html');
+  
+  // Log all relevant paths
+  console.log('Root directory:', rootDir);
+  console.log('Frontend build path:', frontendBuildPath);
+  console.log('Index.html path:', indexPath);
+  
+  // Check directory structure
+  try {
+    // Check if frontend/dist exists
+    if (fs.existsSync(frontendBuildPath)) {
+      console.log('Frontend build directory exists');
+      
+      // List contents of the build directory
       const files = fs.readdirSync(frontendBuildPath);
       console.log('Files in build directory:', files);
       
-      // Serve static files
-      app.use(express.static(frontendBuildPath));
-      
-      // Serve index.html for all non-API routes
-      app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api')) {
-          return next();
+      // Check if index.html exists
+      if (fs.existsSync(indexPath)) {
+        console.log('index.html found');
+        
+        // Read index.html contents to verify it's readable
+        try {
+          const indexContent = fs.readFileSync(indexPath, 'utf8');
+          console.log('Successfully read index.html, length:', indexContent.length);
+          
+          // Serve static files
+          app.use(express.static(frontendBuildPath));
+          
+          // Root path handler
+          app.get('/', (req, res) => {
+            console.log('Serving root path (/)');
+            res.sendFile(indexPath);
+          });
+          
+          // Catch-all handler for client-side routing
+          app.get('*', (req, res, next) => {
+            if (req.path.startsWith('/api')) {
+              return next();
+            }
+            console.log('Serving index.html for path:', req.path);
+            res.sendFile(indexPath);
+          });
+          
+        } catch (error) {
+          console.error('Error reading index.html:', error);
+          app.get('*', (req, res) => {
+            res.status(500).send('Error reading index.html file');
+          });
         }
-        console.log('Serving index.html for path:', req.path);
-        res.sendFile(indexPath);
-      });
+      } else {
+        console.error('index.html not found at:', indexPath);
+        app.get('*', (req, res) => {
+          res.status(404).send('index.html not found in build directory');
+        });
+      }
     } else {
-      console.error('index.html not found in build directory');
+      console.error('Build directory not found at:', frontendBuildPath);
       app.get('*', (req, res) => {
-        res.status(404).send('Frontend not built. Please run npm run build');
+        res.status(404).send('Frontend build directory not found');
       });
     }
-  } else {
-    console.error('Frontend build directory does not exist');
+  } catch (error) {
+    console.error('Error setting up static files:', error);
     app.get('*', (req, res) => {
-      res.status(404).send('Frontend not built. Please run npm run build');
+      res.status(500).send('Server configuration error');
     });
   }
 }
