@@ -7,7 +7,7 @@
     "start": "cd backend && npm start",
     "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
     "clean": "rimraf frontend/dist",
-    "build-frontend": "cd frontend && npm run build",
+    "build-frontend": "cd frontend && tsc && vite build",
     "build": "npm run clean && npm run install-deps && npm run build-frontend",
     "verify": "node scripts/verify-build.js",
     "postbuild": "npm run verify",
