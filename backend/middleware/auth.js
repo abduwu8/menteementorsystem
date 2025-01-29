@@ -31,7 +31,7 @@ const auth = async (req, res, next) => {
     console.log('Verifying token:', token.substring(0, 20) + '...');
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded);
+    console.log('Decoded token:', { ...decoded, id: decoded.id });
     
     // Find user based on role
     let user;
@@ -49,14 +49,18 @@ const auth = async (req, res, next) => {
     }
 
     // Set user info on request object
-    req.user = user.toObject(); // Convert to plain object
-    req.user.id = user._id;
-    req.user._id = user._id;
-    req.user.role = decoded.role;
+    req.user = {
+      ...user.toObject(),
+      id: user._id.toString(),
+      _id: user._id.toString(),
+      role: decoded.role // Ensure role is set from the token
+    };
 
     console.log('Auth successful:', {
       userId: req.user.id,
-      role: req.user.role
+      role: req.user.role,
+      method: req.method,
+      path: req.path
     });
 
     next();

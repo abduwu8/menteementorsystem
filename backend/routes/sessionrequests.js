@@ -10,15 +10,14 @@ router.get('/upcoming', auth, async (req, res) => {
     const query = {
       mentor: req.user.id,
       date: { $gte: now },
-      status: { $in: ['approved', 'pending'] }  // Include both approved and pending sessions
+      status: { $in: ['approved', 'pending', 'rejected'] }  // Include all relevant statuses
     };
 
     console.log('Fetching upcoming sessions with query:', query);
 
     const sessions = await SessionRequest.find(query)
       .populate('mentee', 'name email currentRole')
-      .sort('date')
-      .limit(3)
+      .sort({ date: 1, 'timeSlot.startTime': 1 })  // Sort by date and time
       .lean();
 
     console.log('Found sessions:', sessions);
@@ -82,6 +81,13 @@ router.put('/:requestId/status', auth, async (req, res) => {
     const { requestId } = req.params;
     const { status } = req.body;
 
+    console.log('Updating session request:', {
+      requestId,
+      status,
+      userRole: req.user.role,
+      userId: req.user.id
+    });
+
     if (!['approved', 'rejected', 'cancelled'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
@@ -95,17 +101,33 @@ router.put('/:requestId/status', auth, async (req, res) => {
     });
 
     if (!sessionRequest) {
+      console.log('Session request not found:', {
+        requestId,
+        userId: req.user.id,
+        userRole: req.user.role
+      });
       return res.status(404).json({ message: 'Session request not found' });
     }
 
     // Only mentors can approve/reject, and only mentees can cancel
     if ((status === 'cancelled' && req.user.role !== 'mentee') ||
         (['approved', 'rejected'].includes(status) && req.user.role !== 'mentor')) {
+      console.log('Unauthorized action:', {
+        requestedStatus: status,
+        userRole: req.user.role,
+        allowedRole: ['approved', 'rejected'].includes(status) ? 'mentor' : 'mentee'
+      });
       return res.status(403).json({ message: 'Unauthorized to perform this action' });
     }
 
     sessionRequest.status = status;
     await sessionRequest.save();
+
+    console.log('Session request updated successfully:', {
+      requestId,
+      newStatus: status,
+      userRole: req.user.role
+    });
 
     // Return the updated session request with populated fields
     const updatedRequest = await SessionRequest.findById(requestId)
@@ -115,7 +137,13 @@ router.put('/:requestId/status', auth, async (req, res) => {
 
     res.json(updatedRequest);
   } catch (error) {
-    console.error('Error updating session request:', error);
+    console.error('Error updating session request:', {
+      error: error.message,
+      stack: error.stack,
+      requestId: req.params.requestId,
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
     res.status(500).json({ message: 'Error updating session request' });
   }
 });

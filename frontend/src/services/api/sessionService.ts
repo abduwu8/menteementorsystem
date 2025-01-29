@@ -49,13 +49,38 @@ api.interceptors.response.use(
     });
     return response;
   },
-  (error) => {
+  async (error) => {
     console.error('API Error:', {
       url: error.config?.url,
       status: error.response?.status,
       message: error.message,
       data: error.response?.data
     });
+
+    const originalRequest = error.config;
+
+    // Handle token refresh for 401 errors
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const response = await api.post('/auth/refresh-token');
+        const { token } = response.data;
+        
+        if (token) {
+          localStorage.setItem('token', token);
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    
     return Promise.reject(error);
   }
 );
