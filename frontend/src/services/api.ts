@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Determine if we're in production
-const isProduction = import.meta.env.VITE_NODE_ENV === 'production';
-
 const api = axios.create({
-  // In production, use relative path since backend is served from the same domain
+  // Use relative path since backend is served from the same domain
   baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
