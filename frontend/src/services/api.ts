@@ -1,25 +1,30 @@
 import axios from 'axios';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const api = axios.create({
-  baseURL: '/api',  // Always use relative path
+  baseURL: isDevelopment ? 'http://localhost:5000/api' : '/api',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true
+  withCredentials: true,
+  timeout: 10000, // Add timeout
 });
 
-// Add token to requests if it exists
+// Add request logging
 api.interceptors.request.use((config) => {
+  console.log('Making request to:', config.url);
+  console.log('Request method:', config.method);
+  console.log('Environment:', process.env.NODE_ENV);
+  
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('Adding auth token to request:', config.url);
-  } else {
-    console.log('No auth token found for request:', config.url);
+    console.log('Added auth token to request');
   }
   return config;
 }, (error) => {
-  console.error('Request interceptor error:', error);
+  console.error('Request error:', error);
   return Promise.reject(error);
 });
 
