@@ -35,7 +35,6 @@ export default {
         'pulse-fade': 'pulseFade 4s ease-in-out infinite',
         'border-glow': 'border-glow 8s linear infinite',
         'fade-in': 'fadeIn 0.5s ease-out',
-        'spin-reverse': 'spin 1s linear infinite reverse',
       },
       keyframes: {
         pulseFade: {

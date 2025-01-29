@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { sessionService, mentorService } from '../services/api';
 import Toast from './Toast';
-import Loader from './Loader';
 
 interface SessionBookingProps {
   mentorId: string;
@@ -262,13 +261,7 @@ const SessionBooking = ({ mentorId, onClose, onSuccess }: SessionBookingProps): 
               disabled={isLoading || !selectedTimeSlot}
               className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400`}
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <Loader />
-                </div>
-              ) : (
-                'Request Session'
-              )}
+              {isLoading ? 'Requesting...' : 'Request Session'}
             </button>
           </div>
         </form>

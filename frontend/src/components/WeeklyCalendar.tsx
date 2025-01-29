@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { mentorService } from '../services/api';
 import { RiCloseLine, RiCalendarCheckLine, RiTimeLine, RiAlertLine } from 'react-icons/ri';
-import Loader from './Loader';
 
 interface TimeSlot {
   startTime: string;
@@ -48,9 +47,9 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ initialAvailability, on
   const [availability, setAvailability] = useState<DateSchedule[]>(initialAvailability || []);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get tomorrow's date as minimum date
   const tomorrow = new Date();
@@ -133,7 +132,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ initialAvailability, on
 
   const saveAvailability = async () => {
     try {
-      setIsSubmitting(true);
+      setIsLoading(true);
       setError('');
       setSuccessMessage('');
 
@@ -158,7 +157,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ initialAvailability, on
       console.error('Error saving availability:', err);
       setError(err.response?.data?.message || 'Failed to save availability');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -316,20 +315,21 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ initialAvailability, on
       <div className="flex justify-end">
         <button
           onClick={saveAvailability}
-          disabled={isSubmitting || availability.length === 0}
+          disabled={isLoading || availability.length === 0}
           className={`
             px-6 py-3 rounded-xl font-medium flex items-center space-x-2
-            ${isSubmitting || availability.length === 0
+            ${isLoading || availability.length === 0
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm hover:shadow-md'
             }
             transition-all duration-200
           `}
         >
-          {isSubmitting ? (
-            <div className="flex items-center justify-center">
-              <Loader />
-            </div>
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+              <span>Saving...</span>
+            </>
           ) : (
             <>
               <RiCalendarCheckLine className="text-xl" />

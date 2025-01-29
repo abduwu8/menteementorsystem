@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { mentorService, sessionService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import SessionRequestForm from '../../components/SessionRequestForm';
-import Loader from '../../components/Loader';
 
 interface TimeSlot {
   startTime: string;
@@ -80,7 +79,7 @@ const MentorList = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
       </div>
     );
   }

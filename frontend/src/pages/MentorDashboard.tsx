@@ -10,7 +10,6 @@ import {
   RiUserLine
 } from 'react-icons/ri';
 import AIChatPopup from '../components/AIChatPopup';
-import Loader from '../components/Loader';
 
 interface Session {
   _id: string;
@@ -103,7 +102,7 @@ const MentorDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <Loader />
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -213,7 +212,7 @@ const MentorDashboard: React.FC = () => {
                             {completingSession === session._id ? (
                               <>
                                 <span>Completing...</span>
-                                <Loader />
+                                <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                               </>
                             ) : (
                               <span>Complete</span>

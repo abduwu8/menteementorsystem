@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { sessionService } from '../services/api';
-import Loader from './Loader';
 
 interface SessionRequest {
   _id: string;
@@ -57,7 +56,7 @@ const SessionRequests = (): JSX.Element => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
-        <Loader />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
