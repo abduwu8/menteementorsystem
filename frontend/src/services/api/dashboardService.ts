@@ -125,11 +125,19 @@ const dashboardService = {
       if (!sessionId) {
         throw new Error('Session ID is required');
       }
-      const response = await api.post(`/sessions/${sessionId}/complete`);
+      console.log('Completing session:', sessionId);
+      // Update to use the correct endpoint
+      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
+      console.log('Session completed successfully:', response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in completeSession:', error);
-      throw error;
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to complete this session. Please make sure you are logged in as a mentor.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session not found. It may have been already completed or cancelled.');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to complete session. Please try again.');
     }
   }
 };

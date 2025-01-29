@@ -65,14 +65,22 @@ const MentorDashboard: React.FC = () => {
   const handleCompleteSession = async (sessionId: string) => {
     try {
       setCompletingSession(sessionId);
+      setError(null);
+      console.log('Attempting to complete session:', sessionId);
+      
       await dashboardService.completeSession(sessionId);
+      console.log('Session completed successfully');
+      
       // Remove the completed session from the list
       setUpcomingSessions(prev => prev.filter(session => session._id !== sessionId));
-      // Show success toast or message if you have a notification system
-    } catch (error) {
-      console.error('Error completing session:', error);
+      
+    } catch (err: any) {
+      console.error('Error completing session:', err);
       // Show error message to user
-      setError('Failed to complete session. Please try again.');
+      setError(err.message || 'Failed to complete session. Please try again.');
+      
+      // Refresh the sessions list to ensure UI is in sync with backend
+      await fetchDashboardData();
     } finally {
       setCompletingSession(null);
     }
