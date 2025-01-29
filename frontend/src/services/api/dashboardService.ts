@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { sessionService } from '../api';
 
 // Get the current domain and environment
 const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
