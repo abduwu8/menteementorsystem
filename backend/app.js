@@ -8,26 +8,31 @@ require('dotenv').config();
 
 const app = express();
 
-// Debug middleware
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
-
-// Middleware
-app.use(express.json());
-app.use(cookieParser());
-
-// Configure CORS
+// Configure CORS - Must be before other middleware
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://menteementorsystemm.onrender.com'] 
+    ? ['https://menteementorsystemm.onrender.com', 'https://menteementorsystemm.onrender.com/'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  exposedHeaders: ['Set-Cookie'],
+  preflightContinue: true,
+  optionsSuccessStatus: 204
 };
 app.use(cors(corsOptions));
+
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Origin:', req.headers.origin);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  next();
+});
+
+// Other Middleware
+app.use(express.json());
+app.use(cookieParser());
 
 // Connect to MongoDB with enhanced options
 mongoose.connect(process.env.MONGODB_URI, {
