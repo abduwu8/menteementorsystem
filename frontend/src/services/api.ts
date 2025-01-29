@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+// Get the current hostname
+const currentHostname = window.location.hostname;
+
+// Determine if we're in production by checking the hostname
+const isProduction = !currentHostname.includes('localhost');
+
+// Set the base URL based on whether we're in production or development
+const baseURL = isProduction 
+  ? '/api'  // Production: use relative path
+  : 'http://localhost:5000/api';  // Development: use localhost
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -23,7 +34,8 @@ api.interceptors.request.use((config) => {
     method: config.method,
     baseURL: config.baseURL,
     headers: config.headers,
-    environment: import.meta.env.VITE_NODE_ENV
+    isProduction: isProduction,
+    hostname: currentHostname
   });
   
   return config;
