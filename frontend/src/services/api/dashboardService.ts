@@ -37,7 +37,7 @@ const dashboardService = {
 
   // Mark session as completed
   completeSession: async (sessionId: string) => {
-    const response = await api.post(`/sessionrequests/${sessionId}/complete`);
+    const response = await api.post(`/sessions/${sessionId}/complete`);
     return response.data;
   }
 };
