@@ -20,6 +20,32 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Add a function to validate and parse user data
+const getUserFromStorage = () => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    const user = JSON.parse(userStr);
+    return user && user.name ? user : null;  // Validate user has required fields
+  } catch (e) {
+    console.error('Error parsing user data:', e);
+    return null;
+  }
+};
+
+// Add a function to safely store user data
+const setUserInStorage = (user) => {
+  try {
+    if (user && user.name) {  // Validate user has required fields
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      console.error('Invalid user data:', user);
+    }
+  } catch (e) {
+    console.error('Error storing user data:', e);
+  }
+};
+
 // Add request logging with more details
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -46,6 +72,10 @@ api.interceptors.request.use((config) => {
 // Enhanced error handling
 api.interceptors.response.use(
   (response) => {
+    // If the response contains user data, validate and store it
+    if (response.data && response.data.user) {
+      setUserInStorage(response.data.user);
+    }
     console.log('API Response:', {
       url: response.config.url,
       status: response.status,
@@ -72,28 +102,25 @@ api.interceptors.response.use(
         const response = await api.post('/auth/refresh-token');
         const { token, user } = response.data;
         
-        if (token) {
+        if (token && user && user.name) {  // Validate user has required fields
           localStorage.setItem('token', token);
-          if (user) {
-            localStorage.setItem('user', JSON.stringify(user));
-          }
+          setUserInStorage(user);
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
+        } else {
+          throw new Error('Invalid token refresh response');
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        // Clear user data and redirect to login
-        localStorage.clear(); // Clear all localStorage data
+        localStorage.clear();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
 
-    // If we get a 404 for user-related endpoints, redirect to login
-    if (error.response?.status === 404 && 
-        (error.config.url?.includes('/profile') || 
-         error.config.url?.includes('/sessions'))) {
-      console.error('User-related resource not found, redirecting to login');
+    // If we get a 404 or the user data is invalid, redirect to login
+    if (error.response?.status === 404 || !getUserFromStorage()) {
+      console.error('User-related resource not found or invalid user data');
       localStorage.clear();
       window.location.href = '/login';
       return Promise.reject(error);
@@ -107,14 +134,17 @@ api.interceptors.response.use(
 export const authService = {
   login: async (data: { email: string; password: string; role: 'mentor' | 'mentee' }) => {
     const response = await api.post('/auth/login', data);
-    // Store token and user data
     const { token, user } = response.data;
-    if (token && user) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+    
+    if (!token || !user || !user.name) {
+      throw new Error('Invalid login response');
     }
+    
+    localStorage.setItem('token', token);
+    setUserInStorage(user);
     return response.data;
   },
+  
   register: async (data: { 
     name: string; 
     email: string; 
@@ -127,19 +157,37 @@ export const authService = {
     company?: string;
   }) => {
     const response = await api.post('/auth/register', data);
-    // Store token and user data
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    const { token, user } = response.data;
+    
+    if (!token || !user || !user.name) {
+      throw new Error('Invalid registration response');
+    }
+    
+    localStorage.setItem('token', token);
+    setUserInStorage(user);
     return response.data;
   },
+  
   logout: async () => {
     try {
       await api.post('/auth/logout');
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.clear();
+      window.location.href = '/login';
     }
   },
+
+  // Add a method to check if user is authenticated
+  isAuthenticated: () => {
+    const token = localStorage.getItem('token');
+    const user = getUserFromStorage();
+    return !!(token && user && user.name);
+  },
+
+  // Add a method to get current user
+  getCurrentUser: () => {
+    return getUserFromStorage();
+  }
 };
 
 // Mentor services
