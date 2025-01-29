@@ -239,6 +239,46 @@ export const menteeService = {
 
 // Session services
 export const sessionService = {
+  getAvailableSessions: async () => {
+    try {
+      const response = await api.get('/sessions/available');
+      return response.data;
+    } catch (error) {
+      console.error('Error in getAvailableSessions:', error);
+      throw error;
+    }
+  },
+
+  getMySessions: async () => {
+    try {
+      const response = await api.get('/sessions');
+      return response.data;
+    } catch (error) {
+      console.error('Error in getMySessions:', error);
+      throw error;
+    }
+  },
+
+  scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
+    try {
+      const response = await api.post(`/sessions/${sessionId}/schedule`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in scheduleSession:', error);
+      throw error;
+    }
+  },
+
+  requestSession: async (data: any) => {
+    try {
+      const response = await api.post('/sessions/request', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in requestSession:', error);
+      throw error;
+    }
+  },
+
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
@@ -247,18 +287,6 @@ export const sessionService = {
       return response.data;
     } catch (error) {
       console.error('Error in getSessionRequests:', error);
-      throw error;
-    }
-  },
-
-  getDashboardSessions: async () => {
-    try {
-      console.log('Fetching dashboard sessions...');
-      const response = await api.get('/sessionrequests/dashboard');
-      console.log('Dashboard sessions response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in getDashboardSessions:', error);
       throw error;
     }
   },
@@ -291,6 +319,9 @@ export const sessionService = {
         headers: response.headers,
         userRole: user.role
       });
+
+      // Trigger a refresh of session requests
+      await sessionService.getSessionRequests();
       
       return response.data;
     } catch (error: any) {
@@ -314,46 +345,6 @@ export const sessionService = {
       } else {
         throw new Error('Failed to update session request');
       }
-    }
-  },
-
-  requestSession: async (data: any) => {
-    try {
-      const response = await api.post('/sessions/request', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in requestSession:', error);
-      throw error;
-    }
-  },
-
-  getAvailableSessions: async () => {
-    try {
-      const response = await api.get('/sessions/available');
-      return response.data;
-    } catch (error) {
-      console.error('Error in getAvailableSessions:', error);
-      throw error;
-    }
-  },
-
-  getMySessions: async () => {
-    try {
-      const response = await api.get('/sessions');
-      return response.data;
-    } catch (error) {
-      console.error('Error in getMySessions:', error);
-      throw error;
-    }
-  },
-
-  scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
-    try {
-      const response = await api.post(`/sessions/${sessionId}/schedule`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in scheduleSession:', error);
-      throw error;
     }
   },
 

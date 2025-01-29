@@ -28,7 +28,6 @@ const SessionRequests = (): JSX.Element => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     // Check if user is a mentor
@@ -51,9 +50,7 @@ const SessionRequests = (): JSX.Element => {
         throw new Error('Invalid response format from server');
       }
 
-      // Only show pending requests in the sessions page
-      const pendingRequests = data.filter(request => request.status === 'pending');
-      setRequests(pendingRequests);
+      setRequests(data);
     } catch (err: any) {
       console.error('Error fetching requests:', err);
       const errorMessage = err.message || 'Failed to fetch session requests';
@@ -86,12 +83,20 @@ const SessionRequests = (): JSX.Element => {
       const updatedRequest = await sessionService.handleSessionRequest(requestId, status);
       console.log('Request updated successfully:', updatedRequest);
       
-      // Remove the request from the list since it's no longer pending
-      setRequests(prevRequests => prevRequests.filter(req => req._id !== requestId));
+      // Update the UI with the returned data
+      setRequests(prevRequests => 
+        prevRequests.map(req => 
+          req._id === requestId 
+            ? { ...req, ...updatedRequest }
+            : req
+        )
+      );
+
+      // Refresh the data immediately
+      await fetchRequests();
 
       // Show success message
-      setSuccessMessage(`Session request ${status} successfully`);
-      setTimeout(() => setSuccessMessage(''), 3000);
+      console.log(`Session request ${status} successfully`);
       
     } catch (err: any) {
       console.error('Error handling request:', err);
@@ -142,11 +147,6 @@ const SessionRequests = (): JSX.Element => {
 
   return (
     <div className="space-y-4">
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md mb-4">
-          {successMessage}
-        </div>
-      )}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
           {error}
@@ -169,8 +169,12 @@ const SessionRequests = (): JSX.Element => {
                 <span className="text-sm text-gray-500">
                   {new Date(request.createdAt).toLocaleDateString()}
                 </span>
-                <span className="text-sm font-medium text-yellow-600">
-                  Pending
+                <span className={`text-sm font-medium mt-1 ${
+                  request.status === 'approved' ? 'text-green-600' :
+                  request.status === 'rejected' ? 'text-red-600' :
+                  'text-yellow-600'
+                }`}>
+                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                 </span>
               </div>
             </div>
@@ -195,24 +199,26 @@ const SessionRequests = (): JSX.Element => {
               <p className="text-gray-700">{request.description || 'No description provided'}</p>
             </div>
             
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => handleRequest(request._id, 'rejected')}
-                disabled={isUpdating === request._id}
-                className={`px-4 py-2 text-red-600 hover:text-red-800 border border-red-600 rounded-md hover:bg-red-50 
-                  ${isUpdating === request._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isUpdating === request._id ? 'Processing...' : 'Reject'}
-              </button>
-              <button
-                onClick={() => handleRequest(request._id, 'approved')}
-                disabled={isUpdating === request._id}
-                className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700
-                  ${isUpdating === request._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isUpdating === request._id ? 'Processing...' : 'Accept'}
-              </button>
-            </div>
+            {request.status === 'pending' && (
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => handleRequest(request._id, 'rejected')}
+                  disabled={isUpdating === request._id}
+                  className={`px-4 py-2 text-red-600 hover:text-red-800 border border-red-600 rounded-md hover:bg-red-50 
+                    ${isUpdating === request._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isUpdating === request._id ? 'Processing...' : 'Reject'}
+                </button>
+                <button
+                  onClick={() => handleRequest(request._id, 'approved')}
+                  disabled={isUpdating === request._id}
+                  className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700
+                    ${isUpdating === request._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isUpdating === request._id ? 'Processing...' : 'Accept'}
+                </button>
+              </div>
+            )}
           </div>
         );
       })}
