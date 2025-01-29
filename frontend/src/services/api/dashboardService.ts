@@ -46,6 +46,20 @@ api.interceptors.response.use(
       message: error.message,
       data: error.response?.data
     });
+
+    // If we get a 404 for dashboard endpoints, it might mean the user's session is invalid
+    if (error.response?.status === 404 && 
+        (error.config.url?.includes('/dashboard') || 
+         error.config.url?.includes('/sessions'))) {
+      console.error('Dashboard resource not found or user unauthorized');
+      // Check if user data exists
+      const user = localStorage.getItem('user');
+      if (!user) {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -60,6 +74,12 @@ const dashboardService = {
   // Get mentor's dashboard statistics
   getMentorStats: async (): Promise<DashboardStats> => {
     try {
+      // Verify user is logged in before making request
+      const user = localStorage.getItem('user');
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await api.get('/mentors/dashboard/stats');
       return response.data;
     } catch (error) {
@@ -71,10 +91,24 @@ const dashboardService = {
   // Get mentor's upcoming sessions
   getUpcomingSessions: async () => {
     try {
+      // Verify user is logged in before making request
+      const user = localStorage.getItem('user');
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await api.get('/sessionrequests/upcoming');
       return response.data;
     } catch (error) {
       console.error('Error in getUpcomingSessions:', error);
+      // If we get a 404, it might mean the user's session is invalid
+      if ((error as any).response?.status === 404) {
+        const user = localStorage.getItem('user');
+        if (!user) {
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+      }
       throw error;
     }
   },
@@ -82,6 +116,12 @@ const dashboardService = {
   // Mark session as completed
   completeSession: async (sessionId: string) => {
     try {
+      // Verify user is logged in before making request
+      const user = localStorage.getItem('user');
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await api.post(`/sessions/${sessionId}/complete`);
       return response.data;
     } catch (error) {

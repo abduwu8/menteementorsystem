@@ -70,21 +70,33 @@ api.interceptors.response.use(
       try {
         // Try to refresh the token
         const response = await api.post('/auth/refresh-token');
-        const { token } = response.data;
+        const { token, user } = response.data;
         
         if (token) {
           localStorage.setItem('token', token);
+          if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+          }
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
         // Clear user data and redirect to login
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.clear(); // Clear all localStorage data
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
+    }
+
+    // If we get a 404 for user-related endpoints, redirect to login
+    if (error.response?.status === 404 && 
+        (error.config.url?.includes('/profile') || 
+         error.config.url?.includes('/sessions'))) {
+      console.error('User-related resource not found, redirecting to login');
+      localStorage.clear();
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
@@ -96,8 +108,11 @@ export const authService = {
   login: async (data: { email: string; password: string; role: 'mentor' | 'mentee' }) => {
     const response = await api.post('/auth/login', data);
     // Store token and user data
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    const { token, user } = response.data;
+    if (token && user) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
     return response.data;
   },
   register: async (data: { 

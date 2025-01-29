@@ -56,6 +56,18 @@ api.interceptors.response.use(
       message: error.message,
       data: error.response?.data
     });
+
+    // If we get a 404 for session endpoints, it might mean the user's session is invalid
+    if (error.response?.status === 404 && error.config.url?.includes('/sessions')) {
+      console.error('Session not found or user unauthorized');
+      // Check if user data exists
+      const user = localStorage.getItem('user');
+      if (!user) {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -76,6 +88,12 @@ interface SessionRequest {
 export const sessionService = {
   getAvailableSessions: async () => {
     try {
+      // Verify user is logged in before making request
+      const user = localStorage.getItem('user');
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await api.get('/sessions/available');
       return response.data;
     } catch (error) {
@@ -138,12 +156,26 @@ export const sessionService = {
 
   getUpcomingSessions: async () => {
     try {
+      // Verify user is logged in before making request
+      const user = localStorage.getItem('user');
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       console.log('Fetching upcoming sessions...');
       const response = await api.get('/sessionrequests/upcoming');
       console.log('Upcoming sessions response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error in getUpcomingSessions:', error);
+      // If we get a 404, it might mean the user's session is invalid
+      if ((error as any).response?.status === 404) {
+        const user = localStorage.getItem('user');
+        if (!user) {
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+      }
       throw error;
     }
   },
