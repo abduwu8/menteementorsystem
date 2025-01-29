@@ -7,7 +7,7 @@
     "start": "cd backend && npm start",
     "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
     "clean": "node -e \"const fs=require('fs');if(fs.existsSync('frontend/dist')){fs.rmSync('frontend/dist',{recursive:true,force:true});console.log('Cleaned frontend/dist')}\"",
-    "build-frontend": "cd frontend && tsc && vite build",
+    "build-frontend": "cd frontend && npm run build",
     "build": "npm run install-deps && npm run clean && npm run build-frontend",
     "verify": "node scripts/verify-build.js",
     "postbuild": "npm run verify",
