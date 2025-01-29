@@ -1,15 +1,16 @@
 import axios from 'axios';
 
-// Get the current hostname
-const currentHostname = window.location.hostname;
+// Get the current domain and protocol
+const protocol = window.location.protocol;
+const hostname = window.location.hostname;
+const port = window.location.port;
 
-// Determine if we're in production by checking the hostname
-const isProduction = !currentHostname.includes('localhost');
+// Build the base URL using the current domain
+const baseURL = hostname === 'localhost'
+  ? 'http://localhost:5000/api'
+  : `${protocol}//${hostname}${port ? `:${port}` : ''}/api`;
 
-// Set the base URL based on whether we're in production or development
-const baseURL = isProduction 
-  ? '/api'  // Production: use relative path
-  : 'http://localhost:5000/api';  // Development: use localhost
+console.log('API Base URL:', baseURL);
 
 const api = axios.create({
   baseURL,
@@ -34,8 +35,7 @@ api.interceptors.request.use((config) => {
     method: config.method,
     baseURL: config.baseURL,
     headers: config.headers,
-    isProduction: isProduction,
-    hostname: currentHostname
+    fullUrl: `${config.baseURL}${config.url}`
   });
   
   return config;
@@ -59,7 +59,8 @@ api.interceptors.response.use(
       url: error.config?.url,
       status: error.response?.status,
       message: error.message,
-      response: error.response?.data
+      response: error.response?.data,
+      baseURL: error.config?.baseURL
     });
 
     const originalRequest = error.config;
