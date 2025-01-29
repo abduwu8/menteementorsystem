@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 // Get the current domain and protocol
-const protocol = window.location.protocol;
 const hostname = window.location.hostname;
 
 // Set the base URL based on the environment
