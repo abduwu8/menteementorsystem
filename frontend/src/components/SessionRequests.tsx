@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { sessionService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,7 +9,7 @@ interface SessionRequest {
     name: string;
     email: string;
     currentRole: string;
-  } | null;
+  };
   date: string;
   timeSlot: {
     startTime: string;
@@ -22,6 +23,7 @@ interface SessionRequest {
 
 const SessionRequests = (): JSX.Element => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<SessionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,22 +44,22 @@ const SessionRequests = (): JSX.Element => {
       setError('');
       const data = await sessionService.getSessionRequests();
       
-      // Validate and filter out invalid session data
-      const validRequests = data.filter((request: SessionRequest) => 
-        request && 
-        request._id && 
-        request.date && 
-        request.timeSlot &&
-        request.timeSlot.startTime &&
-        request.timeSlot.endTime &&
-        request.mentee !== null
-      );
+      if (!Array.isArray(data)) {
+        console.error('Invalid response format:', data);
+        throw new Error('Invalid response format from server');
+      }
 
-      console.log('Filtered requests:', validRequests);
-      setRequests(validRequests);
+      setRequests(data);
     } catch (err: any) {
       console.error('Error fetching requests:', err);
-      setError(err.message || 'Failed to fetch session requests');
+      const errorMessage = err.message || 'Failed to fetch session requests';
+      setError(errorMessage);
+      
+      // If unauthorized, redirect to login
+      if (err.response?.status === 401) {
+        navigate('/login');
+      }
+      
       setRequests([]);
     } finally {
       setIsLoading(false);
@@ -66,11 +68,11 @@ const SessionRequests = (): JSX.Element => {
 
   const handleRequest = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
-      setError('');
+      setError(''); // Clear any previous errors
       console.log(`Attempting to ${status} session request:`, requestId);
       
-      await sessionService.handleSessionRequest(requestId, status);
-      console.log(`Session request ${status} successfully`);
+      const response = await sessionService.handleSessionRequest(requestId, status);
+      console.log('Response from handleSessionRequest:', response);
       
       // Update the UI only after successful response
       setRequests(prevRequests => 
@@ -80,11 +82,23 @@ const SessionRequests = (): JSX.Element => {
             : req
         ).filter(req => !(req._id === requestId && status === 'rejected'))
       );
+
+      // Show success message
+      console.log(`Session request ${status} successfully`);
       
     } catch (err: any) {
       console.error('Error handling request:', err);
-      setError(err.message || `Failed to ${status} request`);
-      // Refresh the requests list to ensure UI is in sync
+      
+      // Set appropriate error message based on the error
+      if (err.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      
+      const errorMessage = err.message || `Failed to ${status} request`;
+      setError(errorMessage);
+      
+      // Refresh the requests list to ensure UI is in sync with backend
       await fetchRequests();
     }
   };
@@ -131,12 +145,8 @@ const SessionRequests = (): JSX.Element => {
           <div key={request._id} className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">
-                  {request.mentee?.name || 'Unknown Mentee'}
-                </h3>
-                <p className="text-gray-600">
-                  {request.mentee?.currentRole || 'Role not specified'}
-                </p>
+                <h3 className="text-lg font-semibold">{request.mentee?.name || 'Unknown Mentee'}</h3>
+                <p className="text-gray-600">{request.mentee?.currentRole || 'Role not specified'}</p>
               </div>
               <span className="text-sm text-gray-500">
                 {new Date(request.createdAt).toLocaleDateString()}

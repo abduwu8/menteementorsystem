@@ -197,10 +197,10 @@ export const menteeService = {
 
 // Session services
 export const sessionService = {
-  // Get upcoming sessions for both mentor and mentee
   getUpcomingSessions: async () => {
     try {
-      const response = await api.get('/sessions/upcoming');
+      const response = await api.get('/sessionrequests/upcoming');
+      // Validate and filter out invalid session data
       return response.data.filter((session: Session) => 
         session && 
         session._id && 
@@ -215,18 +215,21 @@ export const sessionService = {
     }
   },
 
-  // Get all sessions for the current user (mentee)
-  getMySessions: async () => {
-    try {
-      const response = await api.get('/sessions/my-sessions');
-      return response.data;
-    } catch (error) {
-      console.error('Error in getMySessions:', error);
-      throw error;
-    }
+  getAvailableSessions: async () => {
+    const response = await api.get('/sessions/available');
+    return response.data;
   },
 
-  // Request a new session (mentee)
+  getMySessions: async () => {
+    const response = await api.get('/sessions');
+    return response.data;
+  },
+
+  scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
+    const response = await api.post(`/sessions/${sessionId}/schedule`, data);
+    return response.data;
+  },
+
   requestSession: async (data: {
     mentorId: string;
     date: string;
@@ -237,22 +240,28 @@ export const sessionService = {
     topic: string;
     description: string;
   }) => {
-    try {
-      console.log('Requesting new session:', data);
-      const response = await api.post('/sessions/request', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in requestSession:', error);
-      throw error;
-    }
+    const response = await api.post('/sessions/request', data);
+    return response.data;
   },
 
-  // Get session requests (mentor)
   getSessionRequests: async () => {
     try {
-      console.log('Fetching session requests...');
-      const response = await api.get('/sessions/requests');
-      return response.data;
+      console.log('Calling getSessionRequests endpoint...');
+      const response = await api.get('/sessionrequests');
+      
+      // Validate and filter out invalid session data
+      const validRequests = response.data.filter((request: Session) => 
+        request && 
+        request._id && 
+        request.mentee && 
+        request.mentee.name && 
+        request.date && 
+        request.timeSlot &&
+        request.timeSlot.startTime &&
+        request.timeSlot.endTime
+      );
+      console.log('Session requests response:', validRequests);
+      return validRequests;
     } catch (error: any) {
       console.error('Error in getSessionRequests:', error);
       if (error.response?.status === 403) {
@@ -262,11 +271,10 @@ export const sessionService = {
     }
   },
 
-  // Handle session request (mentor) - approve/reject
-  handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected') => {
+  handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Handling session request:', { requestId, status });
-      const response = await api.put(`/sessions/requests/${requestId}`, { status });
+      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
       console.log('Session request handled successfully:', response.data);
       return response.data;
     } catch (error: any) {
@@ -274,35 +282,16 @@ export const sessionService = {
       if (error.response?.status === 403) {
         throw new Error('You do not have permission to handle this request.');
       } else if (error.response?.status === 404) {
-        throw new Error('Session request not found or already handled.');
+        throw new Error('Session request not found. It may have been already handled.');
       }
       throw new Error(error.response?.data?.message || `Failed to ${status} session request`);
     }
   },
 
-  // Cancel session (mentee)
-  cancelSession: async (sessionId: string) => {
-    try {
-      console.log('Cancelling session:', sessionId);
-      const response = await api.put(`/sessions/${sessionId}/cancel`);
-      console.log('Session cancelled successfully:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error in cancelSession:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to cancel this session.');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session not found or already cancelled.');
-      }
-      throw new Error(error.response?.data?.message || 'Failed to cancel session');
-    }
-  },
-
-  // Complete session (mentor)
   completeSession: async (sessionId: string) => {
     try {
       console.log('Completing session:', sessionId);
-      const response = await api.put(`/sessions/${sessionId}/complete`);
+      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
       console.log('Session completed successfully:', response.data);
       return response.data;
     } catch (error: any) {
@@ -310,23 +299,34 @@ export const sessionService = {
       if (error.response?.status === 403) {
         throw new Error('You do not have permission to complete this session.');
       } else if (error.response?.status === 404) {
-        throw new Error('Session not found or already completed.');
+        throw new Error('Session not found. It may have been already completed or cancelled.');
       }
       throw new Error(error.response?.data?.message || 'Failed to complete session');
     }
   },
 
-  // Get booked slots for a mentor
-  getBookedSlots: async (mentorId: string, date: string) => {
+  cancelSession: async (sessionId: string) => {
     try {
-      const response = await api.get('/sessions/booked-slots', {
-        params: { mentorId, date }
-      });
+      console.log('Cancelling session:', sessionId);
+      const response = await api.put(`/sessionrequests/${sessionId}/status`, { status: 'cancelled' });
+      console.log('Session cancelled successfully:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('Error in getBookedSlots:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Error in cancelSession:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to cancel this session.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session not found. It may have been already cancelled or completed.');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to cancel session');
     }
+  },
+
+  getBookedSlots: async (mentorId: string, date: string) => {
+    const response = await api.get('/sessions/booked-slots', {
+      params: { mentorId, date }
+    });
+    return response.data;
   }
 };
 
