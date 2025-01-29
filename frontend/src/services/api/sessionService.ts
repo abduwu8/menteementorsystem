@@ -128,18 +128,35 @@ export const sessionService = {
 
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
+      console.log('Sending session request update:', { requestId, status });
       const response = await api.put(`/sessions/requests/${requestId}`, { status });
+      console.log('Session request update response:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('Error in handleSessionRequest:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Error in handleSessionRequest:', {
+        error,
+        requestId,
+        status,
+        response: error.response?.data
+      });
+      
+      // Throw a more user-friendly error message
+      if (error.response?.status === 404) {
+        throw new Error('Session request not found or already handled');
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to modify this request');
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || 'Invalid request');
+      } else {
+        throw new Error('Failed to update session request');
+      }
     }
   },
 
   getUpcomingSessions: async () => {
     try {
       console.log('Fetching upcoming sessions...');
-      const response = await api.get('/sessionrequests/upcoming');
+      const response = await api.get('/sessions/upcoming');
       console.log('Upcoming sessions response:', response.data);
       return response.data;
     } catch (error) {

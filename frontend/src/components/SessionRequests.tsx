@@ -27,6 +27,7 @@ const SessionRequests = (): JSX.Element => {
   const [requests, setRequests] = useState<SessionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is a mentor
@@ -69,15 +70,17 @@ const SessionRequests = (): JSX.Element => {
   const handleRequest = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
       setError(''); // Clear any previous errors
+      setIsUpdating(requestId); // Show loading state for this request
       console.log(`Attempting to ${status} session request:`, requestId);
       
-      await sessionService.handleSessionRequest(requestId, status);
+      const updatedRequest = await sessionService.handleSessionRequest(requestId, status);
+      console.log('Request updated successfully:', updatedRequest);
       
-      // Update the UI
+      // Update the UI with the returned data
       setRequests(prevRequests => 
         prevRequests.map(req => 
           req._id === requestId 
-            ? { ...req, status } 
+            ? { ...req, ...updatedRequest }
             : req
         )
       );
@@ -88,14 +91,14 @@ const SessionRequests = (): JSX.Element => {
     } catch (err: any) {
       console.error('Error handling request:', err);
       
-      // Set appropriate error message based on the error
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
       
-      const errorMessage = err.message || `Failed to ${status} request`;
-      setError(errorMessage);
+      setError(err.message || `Failed to ${status} request`);
+    } finally {
+      setIsUpdating(null); // Clear loading state
     }
   };
 
@@ -131,6 +134,11 @@ const SessionRequests = (): JSX.Element => {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
+          {error}
+        </div>
+      )}
       {requests.map((request) => {
         // Skip rendering if essential data is missing
         if (!request || !request.mentee) {
@@ -182,15 +190,19 @@ const SessionRequests = (): JSX.Element => {
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={() => handleRequest(request._id, 'rejected')}
-                  className="px-4 py-2 text-red-600 hover:text-red-800 border border-red-600 rounded-md hover:bg-red-50"
+                  disabled={isUpdating === request._id}
+                  className={`px-4 py-2 text-red-600 hover:text-red-800 border border-red-600 rounded-md hover:bg-red-50 
+                    ${isUpdating === request._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Reject
+                  {isUpdating === request._id ? 'Processing...' : 'Reject'}
                 </button>
                 <button
                   onClick={() => handleRequest(request._id, 'approved')}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  disabled={isUpdating === request._id}
+                  className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700
+                    ${isUpdating === request._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Accept
+                  {isUpdating === request._id ? 'Processing...' : 'Accept'}
                 </button>
               </div>
             )}
