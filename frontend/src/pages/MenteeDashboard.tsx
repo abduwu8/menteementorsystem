@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { sessionService } from '../services/api';
 import AIChatPopup from '../components/AIChatPopup';
 import { RiCalendarEventLine } from 'react-icons/ri';
+import Loader from '../components/Loader';
 
 interface Session {
   _id: string;
@@ -81,8 +82,8 @@ const MenteeDashboard = (): JSX.Element => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <Loader />
       </div>
     );
   }

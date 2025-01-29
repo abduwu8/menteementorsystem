@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sessionService } from '../services/api';
+import { RiCalendarEventLine } from 'react-icons/ri';
+import Loader from './Loader';
 
 interface SessionRequest {
   _id: string;
@@ -56,7 +58,7 @@ const SessionRequests = (): JSX.Element => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+        <Loader />
       </div>
     );
   }

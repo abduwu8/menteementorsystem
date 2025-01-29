@@ -38,7 +38,8 @@ export default defineConfig({
       },
     },
     sourcemap: false,
-    manifest: true
+    manifest: true,
+    assetsInlineLimit: 0
   },
   resolve: {
     alias: {
@@ -59,5 +60,6 @@ export default defineConfig({
   preview: {
     port: 5173,
     strictPort: true,
-  }
+  },
+  publicDir: 'public'
 })

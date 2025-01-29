@@ -14,6 +14,7 @@ import {
   RiErrorWarningLine,
   RiCheckboxCircleLine
 } from 'react-icons/ri';
+import Loader from '../../components/Loader';
 
 
 interface MentorProfileData {
@@ -123,7 +124,7 @@ const MentorProfile = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+        <Loader />
       </div>
     );
   }
@@ -289,10 +290,10 @@ const MentorProfile = () => {
         <div className="flex justify-end pt-6 border-t border-gray-200">
           <button
             type="submit"
-            className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center space-x-2 transition-colors"
             disabled={isLoading}
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
           >
-            <RiSaveLine className={isLoading ? 'animate-spin' : ''} />
+            <RiSaveLine className="mr-2" />
             <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
