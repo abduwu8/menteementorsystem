@@ -42,7 +42,16 @@ router.post('/', async (req, res) => {
   // Set proper content type
   res.setHeader('Content-Type', 'application/json');
 
+  // Log environment state at request time
+  console.log('Chat Request Environment Check:', {
+    hasGroqKey: !!process.env.GROQ_API_KEY,
+    groqKeyLength: process.env.GROQ_API_KEY?.length,
+    groqClientInitialized: !!groq,
+    nodeEnv: process.env.NODE_ENV
+  });
+
   if (!process.env.GROQ_API_KEY) {
+    console.error('GROQ API key missing during request handling');
     return res.status(500).json({ 
       error: 'GROQ API key is not configured',
       response: null 
@@ -50,6 +59,7 @@ router.post('/', async (req, res) => {
   }
 
   if (!groq) {
+    console.error('GROQ client not initialized during request handling');
     return res.status(500).json({ 
       error: 'AI service is not properly initialized',
       response: null 
@@ -65,7 +75,10 @@ router.post('/', async (req, res) => {
       });
     }
 
-    console.log('Received message:', message);
+    console.log('Processing chat message:', {
+      messageLength: message.length,
+      hasGroqClient: !!groq
+    });
 
     const completion = await groq.chat.completions.create({
       messages: [
