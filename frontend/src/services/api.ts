@@ -274,7 +274,7 @@ export const sessionService = {
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Handling session request:', { requestId, status });
-      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
+      const response = await api.put(`/sessions/requests/${requestId}`, { status });
       console.log('Session request handled successfully:', response.data);
       return response.data;
     } catch (error: any) {

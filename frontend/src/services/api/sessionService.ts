@@ -129,7 +129,7 @@ export const sessionService = {
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Sending session request update:', { requestId, status });
-      const response = await api.put(`/sessions/requests/${requestId}`, { status });
+      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
       console.log('Session request update response:', response.data);
       return response.data;
     } catch (error: any) {

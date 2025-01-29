@@ -76,4 +76,48 @@ router.post('/:sessionId/complete', async (req, res) => {
   }
 });
 
+// Update session request status
+router.put('/:requestId/status', auth, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { status } = req.body;
+
+    if (!['approved', 'rejected', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const sessionRequest = await SessionRequest.findOne({
+      _id: requestId,
+      $or: [
+        { mentor: req.user.id },
+        { mentee: req.user.id }
+      ]
+    });
+
+    if (!sessionRequest) {
+      return res.status(404).json({ message: 'Session request not found' });
+    }
+
+    // Only mentors can approve/reject, and only mentees can cancel
+    if ((status === 'cancelled' && req.user.role !== 'mentee') ||
+        (['approved', 'rejected'].includes(status) && req.user.role !== 'mentor')) {
+      return res.status(403).json({ message: 'Unauthorized to perform this action' });
+    }
+
+    sessionRequest.status = status;
+    await sessionRequest.save();
+
+    // Return the updated session request with populated fields
+    const updatedRequest = await SessionRequest.findById(requestId)
+      .populate('mentor', 'name email currentRole expertise')
+      .populate('mentee', 'name email currentRole')
+      .lean();
+
+    res.json(updatedRequest);
+  } catch (error) {
+    console.error('Error updating session request:', error);
+    res.status(500).json({ message: 'Error updating session request' });
+  }
+});
+
 module.exports = router; 
