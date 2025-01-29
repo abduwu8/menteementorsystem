@@ -26,12 +26,15 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Configure CORS
-app.use(cors({
-  origin: true, // Allow all origins in production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://menteementorsystemm.onrender.com' // Replace with your deployed frontend URL
+    : '*', // Allow all origins in development (localhost)
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
-}));
+};
+app.use(cors(corsOptions));
 
 // API Routes with error handling
 const wrapAsync = (fn) => {
@@ -40,7 +43,6 @@ const wrapAsync = (fn) => {
   };
 };
 
-// API Routes with logging
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/mentees', require('./routes/mentees'));

@@ -1,13 +1,10 @@
 import axios from 'axios';
 
 // Get the current domain and environment
-const hostname = window.location.hostname;
-const isProduction = hostname.includes('render.com') || hostname === 'menteementorsystemm.onrender.com';
-
-// Set the base URL based on the environment
-const baseURL = isProduction
-  ? 'https://menteementorsystemm.onrender.com/api'  // Production URL
-  : 'http://localhost:5000/api';  // Development
+const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
+const baseURL = isProduction 
+  ? '/api'  // Use relative path in production
+  : 'http://localhost:5000/api';  // Development URL
 
 console.log('Environment:', isProduction ? 'production' : 'development');
 console.log('Using API baseURL:', baseURL);
@@ -16,24 +13,17 @@ console.log('Using API baseURL:', baseURL);
 const api = axios.create({
   baseURL,
   headers: {
-    'Content-Type': 'application/json',
-    'Origin': isProduction ? 'https://menteementorsystemm.onrender.com' : 'http://localhost:5173'
+    'Content-Type': 'application/json'
   },
   withCredentials: true,
   timeout: isProduction ? 30000 : 15000  // Longer timeout for production
 });
 
-// Add request interceptor to include auth token and handle CORS
+// Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  // Add CORS headers for production
-  if (isProduction) {
-    config.headers['Access-Control-Allow-Origin'] = 'https://menteementorsystemm.onrender.com';
-    config.headers['Access-Control-Allow-Credentials'] = 'true';
   }
 
   console.log('API Request:', {
@@ -60,14 +50,6 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // If the error is due to local server being down in production, retry with production URL
-    if (isProduction && error.message?.includes('Network Error')) {
-      console.log('Network error detected, ensuring production URL is used');
-      const originalRequest = error.config;
-      originalRequest.baseURL = 'https://menteementorsystemm.onrender.com/api';
-      return axios(originalRequest);
-    }
-
     console.error('API Error:', {
       url: error.config?.url,
       status: error.response?.status,
@@ -162,23 +144,6 @@ export const sessionService = {
       return response.data;
     } catch (error) {
       console.error('Error in getUpcomingSessions:', error);
-      if (isProduction) {
-        // Retry with explicit production URL if first attempt fails
-        try {
-          const retryResponse = await axios.get('https://menteementorsystemm.onrender.com/api/sessionrequests/upcoming', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json',
-              'Origin': 'https://menteementorsystemm.onrender.com'
-            },
-            withCredentials: true
-          });
-          return retryResponse.data;
-        } catch (retryError) {
-          console.error('Retry also failed:', retryError);
-          throw retryError;
-        }
-      }
       throw error;
     }
   },

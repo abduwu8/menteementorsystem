@@ -3,14 +3,14 @@ import axios from 'axios';
 // Get the current domain and protocol
 const protocol = window.location.protocol;
 const hostname = window.location.hostname;
-const port = window.location.port;
 
-// Build the base URL using the current domain
+// Set the base URL based on the environment
 const baseURL = hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : `${protocol}//${hostname}${port ? `:${port}` : ''}/api`;
+  ? 'http://localhost:5000/api'  // Development
+  : '/api';  // Production (relative path)
 
-console.log('API Base URL:', baseURL);
+console.log('Current hostname:', hostname);
+console.log('Using API baseURL:', baseURL);
 
 const api = axios.create({
   baseURL,
@@ -198,7 +198,7 @@ export const menteeService = {
 // Session services
 export const sessionService = {
   getUpcomingSessions: async () => {
-    const response = await api.get('/sessions/upcoming');
+    const response = await api.get('/sessionrequests/upcoming');
     return response.data;
   },
 
@@ -268,4 +268,6 @@ export const lectureService = {
     const response = await api.put(`/lecture-requests/${requestId}`, { status });
     return response.data;
   },
-}; 
+};
+
+export default api; 
