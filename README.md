@@ -29,3 +29,12 @@ An AI-enhanced mentorship platform connecting mentees with experienced professio
 * Material-UI components
 * RESTful API integration
 * AI/ML services
+
+##  Quick Start
+
+```bash
+git clone (https://github.com/abduwu8/menteementorsystem)
+cd menteementorsystem
+npm install
+npm run dev
+```
