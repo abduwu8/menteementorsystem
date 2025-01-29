@@ -1,50 +1,40 @@
-# React + TypeScript + Vite
+# OviEdu 
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI-enhanced mentorship platform connecting mentees with experienced professionals for personalized learning and career growth. Combining human expertise with AI assistance for a comprehensive educational experience.
 
-Currently, two official plugins are available:
+##  Core Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+###  AI Support
+* 24/7 AI mentorship assistant
+* Real-time code review and guidance
+* Smart mentor-mentee matching
+* Personalized learning paths
+* Progress tracking and insights
 
-## Expanding the ESLint configuration
+### User Features
+**For Mentees**
+* Browse and connect with mentors
+* Book sessions and track progress
+* Access AI-powered learning support
+* Personalized mentor recommendations
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+**For Mentors**
+* Flexible calendar management
+* Session tracking dashboard
+* AI insights for mentee progress
+* Profile customization
 
-- Configure the top-level `parserOptions` property like this:
+## Tech Stack
+* React + TypeScript frontend
+* Material-UI components
+* RESTful API integration
+* AI/ML services
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+##  Quick Start
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+git clone (https://github.com/abduwu8/menteementorsystem)
+cd menteementorsystem
+npm install
+npm run dev
 ```
