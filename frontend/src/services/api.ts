@@ -273,14 +273,19 @@ export const sessionService = {
 
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
-      const response = await api.put(`/sessionrequests/${requestId}`, { status });
+      console.log('Handling session request:', { requestId, status });
+      // Update to use the correct endpoint that matches the backend route
+      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
+      console.log('Session request handled successfully:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Error in handleSessionRequest:', error);
       if (error.response?.status === 403) {
         throw new Error('You do not have permission to handle this request. Please make sure you are logged in as a mentor.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session request not found. It may have been cancelled or already handled.');
       }
-      throw error;
+      throw new Error(error.response?.data?.message || 'Failed to handle session request');
     }
   },
 

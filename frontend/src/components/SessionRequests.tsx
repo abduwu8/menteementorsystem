@@ -68,8 +68,10 @@ const SessionRequests = (): JSX.Element => {
 
   const handleRequest = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
+      setError(''); // Clear any previous errors
       await sessionService.handleSessionRequest(requestId, status);
-      // Remove the request from the list if rejected, or update status if approved
+      
+      // Update the UI optimistically
       setRequests(prevRequests => 
         prevRequests.map(req => 
           req._id === requestId 
@@ -77,15 +79,24 @@ const SessionRequests = (): JSX.Element => {
             : req
         ).filter(req => req.status !== 'rejected')
       );
+
+      // Show success message (you can add a toast notification here if you have one)
+      console.log(`Session request ${status} successfully`);
+      
     } catch (err: any) {
       console.error('Error handling request:', err);
+      
+      // Set appropriate error message based on the error
+      if (err.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
+      
       const errorMessage = err.message || `Failed to ${status} request`;
       setError(errorMessage);
       
-      // If unauthorized, redirect to login
-      if (err.response?.status === 401) {
-        navigate('/login');
-      }
+      // Refresh the requests list to ensure UI is in sync with backend
+      fetchRequests();
     }
   };
 
