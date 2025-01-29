@@ -1,33 +1,37 @@
 import axios from 'axios';
 import { Session } from './api/dashboardService';
 
-// Get the current domain and protocol
-const hostname = window.location.hostname;
+// Get the current domain and environment
+const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
+const baseURL = isProduction 
+  ? '/api'  // Use relative path in production
+  : 'http://localhost:5000/api';  // Development URL
 
-// Set the base URL based on the environment
-const baseURL = hostname === 'localhost'
-  ? 'http://localhost:5000/api'  // Development
-  : '/api';  // Production (relative path)
-
-console.log('Current hostname:', hostname);
+console.log('Environment:', isProduction ? 'production' : 'development');
 console.log('Using API baseURL:', baseURL);
 
-const api = axios.create({
+// Create a shared API instance
+export const api = axios.create({
   baseURL,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json'
   },
   withCredentials: true,
-  timeout: 10000,
+  timeout: isProduction ? 30000 : 15000  // Longer timeout for production
 });
 
-// Add request logging with more details
+// Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
   
-  // Always include token in Authorization header if it exists
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // Add user role to headers if available
+  if (user && user.role) {
+    config.headers['X-User-Role'] = user.role;
   }
 
   console.log('API Request:', {
@@ -35,22 +39,32 @@ api.interceptors.request.use((config) => {
     method: config.method,
     baseURL: config.baseURL,
     headers: config.headers,
-    fullUrl: `${config.baseURL}${config.url}`
+    environment: isProduction ? 'production' : 'development'
   });
-  
   return config;
 }, (error) => {
-  console.error('Request error:', error);
+  console.error('Request interceptor error:', error);
   return Promise.reject(error);
 });
 
-// Enhanced error handling
+// Add response interceptor for better error handling
 api.interceptors.response.use(
   (response) => {
+    // Update user role from response headers if available
+    const userRole = response.headers['x-user-role'];
+    if (userRole) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user && user.role !== userRole) {
+        user.role = userRole;
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+    }
+
     console.log('API Response:', {
       url: response.config.url,
       status: response.status,
-      data: response.data
+      data: response.data,
+      headers: response.headers
     });
     return response;
   },
@@ -59,35 +73,36 @@ api.interceptors.response.use(
       url: error.config?.url,
       status: error.response?.status,
       message: error.message,
-      response: error.response?.data,
-      baseURL: error.config?.baseURL
+      data: error.response?.data
     });
 
     const originalRequest = error.config;
 
-    // Handle 401 and 403 errors
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+    // Handle token refresh for 401 errors
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        // Try to refresh the token
         const response = await api.post('/auth/refresh-token');
-        const { token } = response.data;
+        const { token, user } = response.data;
         
         if (token) {
           localStorage.setItem('token', token);
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
           return api(originalRequest);
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        // Clear user data and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
-
+    
     return Promise.reject(error);
   }
 );
@@ -197,136 +212,107 @@ export const menteeService = {
 
 // Session services
 export const sessionService = {
-  getUpcomingSessions: async () => {
+  getAvailableSessions: async () => {
     try {
-      const response = await api.get('/sessionrequests/upcoming');
-      // Validate and filter out invalid session data
-      return response.data.filter((session: Session) => 
-        session && 
-        session._id && 
-        session.mentee && 
-        session.mentee.name && 
-        session.date && 
-        session.timeSlot
-      );
+      const response = await api.get('/sessions/available');
+      return response.data;
     } catch (error) {
-      console.error('Error in getUpcomingSessions:', error);
+      console.error('Error in getAvailableSessions:', error);
       throw error;
     }
   },
 
-  getAvailableSessions: async () => {
-    const response = await api.get('/sessions/available');
-    return response.data;
-  },
-
   getMySessions: async () => {
-    const response = await api.get('/sessions');
-    return response.data;
+    try {
+      const response = await api.get('/sessions');
+      return response.data;
+    } catch (error) {
+      console.error('Error in getMySessions:', error);
+      throw error;
+    }
   },
 
   scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
-    const response = await api.post(`/sessions/${sessionId}/schedule`, data);
-    return response.data;
+    try {
+      const response = await api.post(`/sessions/${sessionId}/schedule`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in scheduleSession:', error);
+      throw error;
+    }
   },
 
-  requestSession: async (data: {
-    mentorId: string;
-    date: string;
-    timeSlot: {
-      startTime: string;
-      endTime: string;
-    };
-    topic: string;
-    description: string;
-  }) => {
-    const response = await api.post('/sessions/request', data);
-    return response.data;
+  requestSession: async (data: any) => {
+    try {
+      const response = await api.post('/sessions/request', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in requestSession:', error);
+      throw error;
+    }
   },
 
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
       const response = await api.get('/sessionrequests');
-      
-      // Validate and filter out invalid session data
-      const validRequests = response.data.filter((request: Session) => 
-        request && 
-        request._id && 
-        request.mentee && 
-        request.mentee.name && 
-        request.date && 
-        request.timeSlot &&
-        request.timeSlot.startTime &&
-        request.timeSlot.endTime
-      );
-      console.log('Session requests response:', validRequests);
-      return validRequests;
-    } catch (error: any) {
+      console.log('Session requests response:', response);
+      return response.data;
+    } catch (error) {
       console.error('Error in getSessionRequests:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to view session requests. Please make sure you are logged in as a mentor.');
-      }
       throw error;
     }
   },
 
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
-      console.log('Handling session request:', { requestId, status });
+      console.log('Sending session request update:', { requestId, status });
       const response = await api.put(`/sessions/requests/${requestId}`, { status });
-      console.log('Session request handled successfully:', response.data);
+      console.log('Session request update response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error in handleSessionRequest:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to handle this request.');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session request not found. It may have been already handled.');
+      console.error('Error in handleSessionRequest:', {
+        error,
+        requestId,
+        status,
+        response: error.response?.data
+      });
+      
+      // Throw a more user-friendly error message
+      if (error.response?.status === 404) {
+        throw new Error('Session request not found or already handled');
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to modify this request');
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || 'Invalid request');
+      } else {
+        throw new Error('Failed to update session request');
       }
-      throw new Error(error.response?.data?.message || `Failed to ${status} session request`);
     }
   },
 
-  completeSession: async (sessionId: string) => {
+  getUpcomingSessions: async () => {
     try {
-      console.log('Completing session:', sessionId);
-      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
-      console.log('Session completed successfully:', response.data);
+      console.log('Fetching upcoming sessions...');
+      const response = await api.get('/sessionrequests/upcoming');
+      console.log('Upcoming sessions response:', response.data);
       return response.data;
-    } catch (error: any) {
-      console.error('Error in completeSession:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to complete this session.');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session not found. It may have been already completed or cancelled.');
-      }
-      throw new Error(error.response?.data?.message || 'Failed to complete session');
-    }
-  },
-
-  cancelSession: async (sessionId: string) => {
-    try {
-      console.log('Cancelling session:', sessionId);
-      const response = await api.put(`/sessionrequests/${sessionId}/status`, { status: 'cancelled' });
-      console.log('Session cancelled successfully:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error in cancelSession:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to cancel this session.');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session not found. It may have been already cancelled or completed.');
-      }
-      throw new Error(error.response?.data?.message || 'Failed to cancel session');
+    } catch (error) {
+      console.error('Error in getUpcomingSessions:', error);
+      throw error;
     }
   },
 
   getBookedSlots: async (mentorId: string, date: string) => {
-    const response = await api.get('/sessions/booked-slots', {
-      params: { mentorId, date }
-    });
-    return response.data;
+    try {
+      const response = await api.get('/sessions/booked-slots', {
+        params: { mentorId, date }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error in getBookedSlots:', error);
+      throw error;
+    }
   }
 };
 

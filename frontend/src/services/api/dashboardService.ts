@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '../api';
 import { sessionService } from '../api';
 
 // Get the current domain and environment
