@@ -20,3 +20,9 @@ yarn-error.log*
 *.swp
 *.swo
 .DS_Store
+
+# Environment Variables
+.env
+**/.env
+backend/.env
+frontend/.env
