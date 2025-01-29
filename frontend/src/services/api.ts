@@ -197,7 +197,7 @@ export const menteeService = {
 
 // Session services
 export const sessionService = {
-  // Get upcoming sessions for the current user (mentor or mentee)
+  // Get upcoming sessions for both mentor and mentee
   getUpcomingSessions: async () => {
     try {
       const response = await api.get('/sessions/upcoming');
@@ -215,7 +215,7 @@ export const sessionService = {
     }
   },
 
-  // Get all sessions for the current user
+  // Get all sessions for the current user (mentee)
   getMySessions: async () => {
     try {
       const response = await api.get('/sessions/my-sessions');
@@ -226,7 +226,7 @@ export const sessionService = {
     }
   },
 
-  // Request a new session (for mentees)
+  // Request a new session (mentee)
   requestSession: async (data: {
     mentorId: string;
     date: string;
@@ -247,7 +247,7 @@ export const sessionService = {
     }
   },
 
-  // Get session requests (for mentors)
+  // Get session requests (mentor)
   getSessionRequests: async () => {
     try {
       console.log('Fetching session requests...');
@@ -262,7 +262,7 @@ export const sessionService = {
     }
   },
 
-  // Handle session request (for mentors to approve/reject)
+  // Handle session request (mentor) - approve/reject
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected') => {
     try {
       console.log('Handling session request:', { requestId, status });
@@ -274,13 +274,13 @@ export const sessionService = {
       if (error.response?.status === 403) {
         throw new Error('You do not have permission to handle this request.');
       } else if (error.response?.status === 404) {
-        throw new Error('Session request not found. It may have been already handled.');
+        throw new Error('Session request not found or already handled.');
       }
       throw new Error(error.response?.data?.message || `Failed to ${status} session request`);
     }
   },
 
-  // Cancel session (for mentees)
+  // Cancel session (mentee)
   cancelSession: async (sessionId: string) => {
     try {
       console.log('Cancelling session:', sessionId);
@@ -292,13 +292,13 @@ export const sessionService = {
       if (error.response?.status === 403) {
         throw new Error('You do not have permission to cancel this session.');
       } else if (error.response?.status === 404) {
-        throw new Error('Session not found. It may have been already cancelled or completed.');
+        throw new Error('Session not found or already cancelled.');
       }
       throw new Error(error.response?.data?.message || 'Failed to cancel session');
     }
   },
 
-  // Complete session (for mentors)
+  // Complete session (mentor)
   completeSession: async (sessionId: string) => {
     try {
       console.log('Completing session:', sessionId);
@@ -310,7 +310,7 @@ export const sessionService = {
       if (error.response?.status === 403) {
         throw new Error('You do not have permission to complete this session.');
       } else if (error.response?.status === 404) {
-        throw new Error('Session not found. It may have been already completed or cancelled.');
+        throw new Error('Session not found or already completed.');
       }
       throw new Error(error.response?.data?.message || 'Failed to complete session');
     }

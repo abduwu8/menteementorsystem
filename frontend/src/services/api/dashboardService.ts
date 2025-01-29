@@ -100,7 +100,7 @@ const dashboardService = {
   getUpcomingSessions: async (): Promise<Session[]> => {
     try {
       console.log('Fetching upcoming sessions...');
-      const response = await api.get('/sessionrequests/upcoming');
+      const response = await api.get('/sessions/upcoming');
       
       // Validate and filter out invalid session data
       const sessions = response.data.filter((session: Session) => 
@@ -121,7 +121,22 @@ const dashboardService = {
   },
 
   // Use sessionService for completing sessions
-  completeSession: sessionService.completeSession
+  completeSession: async (sessionId: string) => {
+    try {
+      console.log('Completing session:', sessionId);
+      const response = await api.put(`/sessions/${sessionId}/complete`);
+      console.log('Session completed successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in completeSession:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to complete this session.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session not found or already completed.');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to complete session');
+    }
+  }
 };
 
 export type { DashboardStats, Session };
