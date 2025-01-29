@@ -53,5 +53,9 @@ export default defineConfig({
       'date-fns'
     ]
   },
-  base: '/'
+  base: './',
+  preview: {
+    port: 5000,
+    strictPort: true,
+  }
 })

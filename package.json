@@ -7,6 +7,7 @@
     "start": "cd backend && npm start",
     "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
     "build-frontend": "cd frontend && npm run build",
+    "preview-frontend": "cd frontend && npm run preview",
     "build": "npm run install-deps && npm run build-frontend",
     "postbuild": "node scripts/verify-build.js",
     "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
