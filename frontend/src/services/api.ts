@@ -247,7 +247,7 @@ export const sessionService = {
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
-      const response = await api.get('/sessionrequests');
+      const response = await api.get('/sessions/requests');
       
       // Validate and filter out invalid session data
       const validRequests = response.data.filter((request: Session) => 
@@ -274,8 +274,8 @@ export const sessionService = {
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Handling session request:', { requestId, status });
-      // Update the endpoint to match the backend route structure
-      const response = await api.put(`/sessionrequests/${requestId}`, { status });
+      // Update to use the same base path as getSessionRequests
+      const response = await api.put(`/sessions/requests/${requestId}`, { status });
       console.log('Session request handled successfully:', response.data);
       return response.data;
     } catch (error: any) {
