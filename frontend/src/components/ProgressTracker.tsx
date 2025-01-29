@@ -8,10 +8,9 @@ interface Goal {
 
 interface ProgressTrackerProps {
   goals: Goal[];
-  onUpdateProgress: (goalId: string, progress: number) => void;
 }
 
-const ProgressTracker = ({ goals, onUpdateProgress }: ProgressTrackerProps): JSX.Element => {
+const ProgressTracker = ({ goals }: ProgressTrackerProps): JSX.Element => {
   const getStatusColor = (status: Goal['status']) => {
     switch (status) {
       case 'completed':

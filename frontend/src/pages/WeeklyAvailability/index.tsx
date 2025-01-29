@@ -1,4 +1,3 @@
-import React from 'react';
 import WeeklyCalendar from '../../components/WeeklyCalendar';
 import { RiCalendarLine, RiTimeLine, RiInformationLine } from 'react-icons/ri';
 

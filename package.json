@@ -11,7 +11,8 @@
     "build": "npm run clean && npm run install-deps && npm run build-frontend",
     "verify": "node scripts/verify-build.js",
     "postbuild": "npm run verify",
-    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
+    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
+    "render-build": "npm run build && npm run start"
   },
   "engines": {
     "node": ">=18.0.0"

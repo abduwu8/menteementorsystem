@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
@@ -13,8 +12,6 @@ import MenteeProfile from './pages/Profile/MenteeProfile';
 import SessionRequestPage from './pages/SessionRequestPage';
 import SessionRequestsPage from './pages/SessionRequests';
 import MentorList from './pages/MentorList';
-import RequestLecture from './pages/LectureRequest/RequestLecture';
-import ViewRequests from './pages/LectureRequest/ViewRequests';
 import WeeklyAvailabilityPage from './pages/WeeklyAvailability';
 import ProtectedRoute from './components/ProtectedRoute';
 import AIChatbot from './pages/AIChatbot';
@@ -72,16 +69,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/view-requests"
-            element={
-              <ProtectedRoute allowedRole="mentor">
-                <Layout>
-                  <ViewRequests />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
 
           {/* Protected Mentee routes */}
           <Route
@@ -120,16 +107,6 @@ function App() {
               <ProtectedRoute allowedRole="mentee">
                 <Layout>
                   <MentorList />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/request-lecture"
-            element={
-              <ProtectedRoute allowedRole="mentee">
-                <Layout>
-                  <RequestLecture />
                 </Layout>
               </ProtectedRoute>
             }

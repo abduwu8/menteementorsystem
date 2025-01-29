@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { sessionService } from '../services/api';
-import SessionHistory from '../components/SessionHistory';
 import AIChatPopup from '../components/AIChatPopup';
 import { RiCalendarEventLine } from 'react-icons/ri';
 
@@ -30,29 +29,6 @@ const MenteeDashboard = (): JSX.Element => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [goals] = useState([
-    {
-      id: '1',
-      title: 'Learn React',
-      description: 'Master React fundamentals and advanced concepts',
-      progress: 60,
-      status: 'in-progress' as const,
-    },
-    {
-      id: '2',
-      title: 'Build Portfolio',
-      description: 'Create 3 projects for portfolio',
-      progress: 30,
-      status: 'in-progress' as const,
-    },
-  ]);
-
-  const [availableSlots] = useState([
-    { id: '1', date: '2024-03-20', time: '10:00 AM', isAvailable: true },
-    { id: '2', date: '2024-03-21', time: '2:00 PM', isAvailable: true },
-    { id: '3', date: '2024-03-22', time: '3:00 PM', isAvailable: true },
-  ]);
 
   useEffect(() => {
     fetchSessions();
@@ -90,16 +66,6 @@ const MenteeDashboard = (): JSX.Element => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const handleUpdateProgress = (goalId: string, progress: number) => {
-    // TODO: Implement progress update logic
-    console.log('Updating progress:', { goalId, progress });
-  };
-
-  const handleScheduleSession = (slotId: string) => {
-    // TODO: Implement session scheduling logic
-    console.log('Scheduling session:', slotId);
   };
 
   const handleCancelSession = async (sessionId: string) => {
@@ -194,17 +160,6 @@ const MenteeDashboard = (): JSX.Element => {
     </div>
   );
 
-  // Update the SessionHistory component mapping
-  const sessionHistoryData = sessions.map(session => ({
-    ...session,
-    mentor: {
-      name: session.mentor.name,
-      email: session.mentor.email,
-      currentRole: session.mentor.currentRole,
-      expertise: session.mentor.expertise || []
-    }
-  }));
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -284,22 +239,10 @@ const MenteeDashboard = (): JSX.Element => {
 
         {sessions.length === 0 && (
           <div className="text-center py-8">
-            {/* <p className="text-gray-500 mb-4">You don't have any sessions yet.</p> */}
-            {/* <Link
-              to="/mentors"
-              className="text-indigo-600 hover:text-indigo-800"
-            >
-              Find a mentor to get started →
-            </Link> */}
           </div>
         )}
       </div>
 
-      {/* Session History Component */}
-      <SessionHistory 
-        sessions={sessionHistoryData}
-        onCancelSession={handleCancelSession}
-      />
       <AIChatPopup />
     </div>
   );

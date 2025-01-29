@@ -15,12 +15,6 @@ import {
   RiCheckboxCircleLine
 } from 'react-icons/ri';
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-}
 
 interface MentorProfileData {
   name: string;
@@ -98,16 +92,17 @@ const MentorProfile = () => {
       setIsLoading(true);
       setError('');
       
+      // First update the profile in the backend
       const updatedMentor = await mentorService.updateProfile({
-        bio: profileData.bio,
         expertise: profileData.expertise,
+        bio: profileData.bio,
         yearsOfExperience: profileData.yearsOfExperience,
         currentRole: profileData.currentRole,
         company: profileData.company,
         linkedIn: profileData.linkedIn
       });
 
-      // Update the user data in the auth context
+      // Then update the user data in the auth context
       updateUser({
         expertise: profileData.expertise,
         bio: profileData.bio,

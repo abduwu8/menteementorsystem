@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { authService } from '../../services/api';
 
 const expertiseOptions = [
   'Web Development',
@@ -18,7 +17,7 @@ const expertiseOptions = [
 
 const MentorRegistrationForm = (): JSX.Element => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -63,11 +62,11 @@ const MentorRegistrationForm = (): JSX.Element => {
 
     try {
       const { confirmPassword, ...registrationData } = formData;
-      const response = await authService.register({
+      await register({
         ...registrationData,
-        role: 'mentor'
+        role: 'mentor',
+        yearsOfExperience: parseInt(registrationData.yearsOfExperience, 10)
       });
-      login(response.token, response.user);
       navigate('/mentor-dashboard');
     } catch (error: any) {
       setError(error.response?.data?.message || 'Registration failed');

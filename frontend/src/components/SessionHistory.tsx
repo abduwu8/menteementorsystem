@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface Session {
   _id: string;
   mentor: {
@@ -18,10 +16,9 @@ interface Session {
 
 interface SessionHistoryProps {
   sessions: Session[];
-  onCancelSession?: (sessionId: string) => void;
 }
 
-const SessionHistory: React.FC<SessionHistoryProps> = ({ sessions, onCancelSession }) => {
+const SessionHistory: React.FC<SessionHistoryProps> = ({ sessions }) => {
   // Filter for past sessions only
   const pastSessions = sessions.filter(session => {
     const sessionDate = new Date(session.date);
