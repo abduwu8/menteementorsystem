@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',  // Use relative path since both frontend and backend are served from same origin
+  baseURL: import.meta.env.VITE_API_URL || '/api',  // Use environment variable with fallback
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,6 +11,13 @@ const api = axios.create({
 
 // Add request logging with more details
 api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  
+  // Always include token in Authorization header if it exists
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   console.log('API Request:', {
     url: config.url,
     method: config.method,
@@ -18,10 +25,6 @@ api.interceptors.request.use((config) => {
     headers: config.headers,
   });
   
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 }, (error) => {
   console.error('Request error:', error);
@@ -48,9 +51,11 @@ api.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 and 403 errors
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
+        // Try to refresh the token
         const response = await api.post('/auth/refresh-token');
         const { token } = response.data;
         
