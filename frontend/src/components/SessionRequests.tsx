@@ -49,7 +49,8 @@ const SessionRequests = (): JSX.Element => {
         request.date && 
         request.timeSlot &&
         request.timeSlot.startTime &&
-        request.timeSlot.endTime
+        request.timeSlot.endTime &&
+        request.mentee !== null
       );
 
       console.log('Filtered requests:', validRequests);
@@ -122,7 +123,7 @@ const SessionRequests = (): JSX.Element => {
     <div className="space-y-4">
       {requests.map((request) => {
         // Skip rendering if essential data is missing
-        if (!request) {
+        if (!request || !request.mentee) {
           return null;
         }
 
