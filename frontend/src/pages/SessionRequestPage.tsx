@@ -10,7 +10,6 @@ import {
   RiCalendarCheckLine,
   RiSearchLine,
   RiUserHeartLine,
-  RiCloseLine,
   RiErrorWarningLine
 } from 'react-icons/ri';
 

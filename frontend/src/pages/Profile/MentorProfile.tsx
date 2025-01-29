@@ -93,7 +93,7 @@ const MentorProfile = () => {
       setError('');
       
       // First update the profile in the backend
-      const updatedMentor = await mentorService.updateProfile({
+      await mentorService.updateProfile({
         expertise: profileData.expertise,
         bio: profileData.bio,
         yearsOfExperience: profileData.yearsOfExperience,

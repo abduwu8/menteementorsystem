@@ -24,7 +24,7 @@ interface MenteeProfileData {
 }
 
 const MenteeProfile = () => {
-  const { user } = useAuth();
+  const { updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -80,6 +80,13 @@ const MenteeProfile = () => {
         currentRole: profileData.currentRole,
         education: profileData.education
       });
+      
+      // Update auth context with only User type properties
+      updateUser({
+        name: profileData.name,
+        currentRole: profileData.currentRole
+      });
+
       setSuccessMessage('Profile updated successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
