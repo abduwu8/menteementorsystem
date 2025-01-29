@@ -71,16 +71,15 @@ const SessionRequests = (): JSX.Element => {
       setError(''); // Clear any previous errors
       console.log(`Attempting to ${status} session request:`, requestId);
       
-      const response = await sessionService.handleSessionRequest(requestId, status);
-      console.log('Response from handleSessionRequest:', response);
+      await sessionService.handleSessionRequest(requestId, status);
       
-      // Update the UI only after successful response
+      // Update the UI
       setRequests(prevRequests => 
         prevRequests.map(req => 
           req._id === requestId 
             ? { ...req, status } 
             : req
-        ).filter(req => !(req._id === requestId && status === 'rejected'))
+        )
       );
 
       // Show success message
@@ -97,9 +96,6 @@ const SessionRequests = (): JSX.Element => {
       
       const errorMessage = err.message || `Failed to ${status} request`;
       setError(errorMessage);
-      
-      // Refresh the requests list to ensure UI is in sync with backend
-      await fetchRequests();
     }
   };
 
@@ -148,9 +144,18 @@ const SessionRequests = (): JSX.Element => {
                 <h3 className="text-lg font-semibold">{request.mentee?.name || 'Unknown Mentee'}</h3>
                 <p className="text-gray-600">{request.mentee?.currentRole || 'Role not specified'}</p>
               </div>
-              <span className="text-sm text-gray-500">
-                {new Date(request.createdAt).toLocaleDateString()}
-              </span>
+              <div className="flex flex-col items-end">
+                <span className="text-sm text-gray-500">
+                  {new Date(request.createdAt).toLocaleDateString()}
+                </span>
+                <span className={`text-sm font-medium mt-1 ${
+                  request.status === 'approved' ? 'text-green-600' :
+                  request.status === 'rejected' ? 'text-red-600' :
+                  'text-yellow-600'
+                }`}>
+                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                </span>
+              </div>
             </div>
             
             <div className="mb-4">
@@ -177,7 +182,7 @@ const SessionRequests = (): JSX.Element => {
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={() => handleRequest(request._id, 'rejected')}
-                  className="px-4 py-2 text-red-600 hover:text-red-800"
+                  className="px-4 py-2 text-red-600 hover:text-red-800 border border-red-600 rounded-md hover:bg-red-50"
                 >
                   Reject
                 </button>
@@ -187,12 +192,6 @@ const SessionRequests = (): JSX.Element => {
                 >
                   Accept
                 </button>
-              </div>
-            )}
-            
-            {request.status === 'approved' && (
-              <div className="text-green-600 font-semibold text-right">
-                Approved
               </div>
             )}
           </div>

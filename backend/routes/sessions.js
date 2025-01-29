@@ -91,7 +91,7 @@ router.get('/requests', auth, async (req, res) => {
 
     const requests = await SessionRequest.find({
       mentor: req.user.id,
-      status: 'pending'
+      status: { $ne: 'cancelled' }
     })
     .populate('mentee', 'name email currentRole')
     .sort('-createdAt')
