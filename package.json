@@ -6,9 +6,9 @@
   "scripts": {
     "start": "cd backend && npm start",
     "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
-    "clean": "rimraf frontend/dist",
+    "clean": "node -e \"const fs=require('fs');if(fs.existsSync('frontend/dist')){fs.rmSync('frontend/dist',{recursive:true,force:true});console.log('Cleaned frontend/dist')}\"",
     "build-frontend": "cd frontend && tsc && vite build",
-    "build": "npm run clean && npm run install-deps && npm run build-frontend",
+    "build": "npm run install-deps && npm run clean && npm run build-frontend",
     "verify": "node scripts/verify-build.js",
     "postbuild": "npm run verify",
     "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
@@ -18,7 +18,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "concurrently": "^8.2.2",
-    "rimraf": "^5.0.1"
+    "concurrently": "^8.2.2"
   }
 }
