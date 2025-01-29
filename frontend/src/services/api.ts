@@ -20,32 +20,6 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Add a function to validate and parse user data
-const getUserFromStorage = () => {
-  try {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    const user = JSON.parse(userStr);
-    return user && user.name ? user : null;  // Validate user has required fields
-  } catch (e) {
-    console.error('Error parsing user data:', e);
-    return null;
-  }
-};
-
-// Add a function to safely store user data
-const setUserInStorage = (user) => {
-  try {
-    if (user && user.name) {  // Validate user has required fields
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      console.error('Invalid user data:', user);
-    }
-  } catch (e) {
-    console.error('Error storing user data:', e);
-  }
-};
-
 // Add request logging with more details
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -72,10 +46,6 @@ api.interceptors.request.use((config) => {
 // Enhanced error handling
 api.interceptors.response.use(
   (response) => {
-    // If the response contains user data, validate and store it
-    if (response.data && response.data.user) {
-      setUserInStorage(response.data.user);
-    }
     console.log('API Response:', {
       url: response.config.url,
       status: response.status,
@@ -100,30 +70,21 @@ api.interceptors.response.use(
       try {
         // Try to refresh the token
         const response = await api.post('/auth/refresh-token');
-        const { token, user } = response.data;
+        const { token } = response.data;
         
-        if (token && user && user.name) {  // Validate user has required fields
+        if (token) {
           localStorage.setItem('token', token);
-          setUserInStorage(user);
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
-        } else {
-          throw new Error('Invalid token refresh response');
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        localStorage.clear();
+        // Clear user data and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
-    }
-
-    // If we get a 404 or the user data is invalid, redirect to login
-    if (error.response?.status === 404 || !getUserFromStorage()) {
-      console.error('User-related resource not found or invalid user data');
-      localStorage.clear();
-      window.location.href = '/login';
-      return Promise.reject(error);
     }
 
     return Promise.reject(error);
@@ -134,17 +95,11 @@ api.interceptors.response.use(
 export const authService = {
   login: async (data: { email: string; password: string; role: 'mentor' | 'mentee' }) => {
     const response = await api.post('/auth/login', data);
-    const { token, user } = response.data;
-    
-    if (!token || !user || !user.name) {
-      throw new Error('Invalid login response');
-    }
-    
-    localStorage.setItem('token', token);
-    setUserInStorage(user);
+    // Store token and user data
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
     return response.data;
   },
-  
   register: async (data: { 
     name: string; 
     email: string; 
@@ -157,37 +112,19 @@ export const authService = {
     company?: string;
   }) => {
     const response = await api.post('/auth/register', data);
-    const { token, user } = response.data;
-    
-    if (!token || !user || !user.name) {
-      throw new Error('Invalid registration response');
-    }
-    
-    localStorage.setItem('token', token);
-    setUserInStorage(user);
+    // Store token and user data
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
     return response.data;
   },
-  
   logout: async () => {
     try {
       await api.post('/auth/logout');
     } finally {
-      localStorage.clear();
-      window.location.href = '/login';
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
   },
-
-  // Add a method to check if user is authenticated
-  isAuthenticated: () => {
-    const token = localStorage.getItem('token');
-    const user = getUserFromStorage();
-    return !!(token && user && user.name);
-  },
-
-  // Add a method to get current user
-  getCurrentUser: () => {
-    return getUserFromStorage();
-  }
 };
 
 // Mentor services

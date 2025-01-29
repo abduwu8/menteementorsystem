@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { authService } from '../api';
 
 // Get the current domain and environment
 const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
@@ -57,15 +56,6 @@ api.interceptors.response.use(
       message: error.message,
       data: error.response?.data
     });
-
-    // Check authentication on every error
-    if (!authService.isAuthenticated()) {
-      console.error('User not authenticated');
-      localStorage.clear();
-      window.location.href = '/login';
-      return Promise.reject(error);
-    }
-
     return Promise.reject(error);
   }
 );
@@ -86,10 +76,6 @@ interface SessionRequest {
 export const sessionService = {
   getAvailableSessions: async () => {
     try {
-      if (!authService.isAuthenticated()) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await api.get('/sessions/available');
       return response.data;
     } catch (error) {
@@ -152,10 +138,6 @@ export const sessionService = {
 
   getUpcomingSessions: async () => {
     try {
-      if (!authService.isAuthenticated()) {
-        throw new Error('User not authenticated');
-      }
-
       console.log('Fetching upcoming sessions...');
       const response = await api.get('/sessionrequests/upcoming');
       console.log('Upcoming sessions response:', response.data);

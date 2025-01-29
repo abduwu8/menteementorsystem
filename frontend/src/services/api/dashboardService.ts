@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { authService } from '../api';
 
 // Get the current domain and environment
 const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
@@ -47,15 +46,6 @@ api.interceptors.response.use(
       message: error.message,
       data: error.response?.data
     });
-
-    // Check authentication on every error
-    if (!authService.isAuthenticated()) {
-      console.error('User not authenticated');
-      localStorage.clear();
-      window.location.href = '/login';
-      return Promise.reject(error);
-    }
-
     return Promise.reject(error);
   }
 );
@@ -70,10 +60,6 @@ const dashboardService = {
   // Get mentor's dashboard statistics
   getMentorStats: async (): Promise<DashboardStats> => {
     try {
-      if (!authService.isAuthenticated()) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await api.get('/mentors/dashboard/stats');
       return response.data;
     } catch (error) {
@@ -85,10 +71,6 @@ const dashboardService = {
   // Get mentor's upcoming sessions
   getUpcomingSessions: async () => {
     try {
-      if (!authService.isAuthenticated()) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await api.get('/sessionrequests/upcoming');
       return response.data;
     } catch (error) {
@@ -100,10 +82,6 @@ const dashboardService = {
   // Mark session as completed
   completeSession: async (sessionId: string) => {
     try {
-      if (!authService.isAuthenticated()) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await api.post(`/sessions/${sessionId}/complete`);
       return response.data;
     } catch (error) {
