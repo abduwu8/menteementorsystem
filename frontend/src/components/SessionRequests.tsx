@@ -85,6 +85,9 @@ const SessionRequests = (): JSX.Element => {
         )
       );
 
+      // Refresh the data immediately
+      await fetchRequests();
+
       // Show success message
       console.log(`Session request ${status} successfully`);
       
