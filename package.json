@@ -8,9 +8,8 @@
     "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
     "build-frontend": "cd frontend && npm run build",
     "build": "npm run install-deps && npm run build-frontend",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
+    "postbuild": "node -e \"const fs=require('fs');const path=require('path');const dir='frontend/dist';if(!fs.existsSync(dir)||!fs.existsSync(path.join(dir,'index.html'))){console.error('Build failed - frontend files missing');process.exit(1)}console.log('Build verified')\"",
+    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
   },
   "engines": {
     "node": ">=18.0.0"

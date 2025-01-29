@@ -91,38 +91,35 @@ if (process.env.NODE_ENV === 'production') {
   // Check if the build directory exists
   if (fs.existsSync(frontendBuildPath)) {
     console.log('Frontend build directory exists');
-    // Check for index.html
     const indexPath = path.join(frontendBuildPath, 'index.html');
     if (fs.existsSync(indexPath)) {
       console.log('index.html found in build directory');
+      const files = fs.readdirSync(frontendBuildPath);
+      console.log('Files in build directory:', files);
+      
+      // Serve static files
+      app.use(express.static(frontendBuildPath));
+      
+      // Serve index.html for all non-API routes
+      app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) {
+          return next();
+        }
+        console.log('Serving index.html for path:', req.path);
+        res.sendFile(indexPath);
+      });
     } else {
       console.error('index.html not found in build directory');
+      app.get('*', (req, res) => {
+        res.status(404).send('Frontend not built. Please run npm run build');
+      });
     }
-    // List files in build directory
-    const files = fs.readdirSync(frontendBuildPath);
-    console.log('Files in build directory:', files);
   } else {
     console.error('Frontend build directory does not exist');
+    app.get('*', (req, res) => {
+      res.status(404).send('Frontend not built. Please run npm run build');
+    });
   }
-
-  // Serve static files
-  app.use(express.static(frontendBuildPath));
-
-  // Handle all routes including root path
-  app.get('/*', (req, res) => {
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    console.log('Serving index.html for path:', req.path);
-    const indexPath = path.join(frontendBuildPath, 'index.html');
-    
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      console.error('index.html not found when serving:', req.path);
-      res.status(404).send('Application not found');
-    }
-  });
 }
 
 // Error handling middleware
