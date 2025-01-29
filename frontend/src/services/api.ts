@@ -22,7 +22,16 @@ export const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userStr = localStorage.getItem('user');
+  
+  console.log('Current user data:', userStr);
+  
+  let user = null;
+  try {
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('Error parsing user data:', e);
+  }
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -31,6 +40,9 @@ api.interceptors.request.use((config) => {
   // Add user role to headers if available
   if (user && user.role) {
     config.headers['X-User-Role'] = user.role;
+    console.log('Setting user role in headers:', user.role);
+  } else {
+    console.warn('No user role found in localStorage');
   }
 
   console.log('API Request:', {
@@ -38,7 +50,8 @@ api.interceptors.request.use((config) => {
     method: config.method,
     baseURL: config.baseURL,
     headers: config.headers,
-    environment: isProduction ? 'production' : 'development'
+    environment: isProduction ? 'production' : 'development',
+    userRole: user?.role
   });
   return config;
 }, (error) => {
@@ -51,9 +64,18 @@ api.interceptors.response.use(
   (response) => {
     // Update user role from response headers if available
     const userRole = response.headers['x-user-role'];
-    if (userRole) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user && user.role !== userRole) {
+    const userStr = localStorage.getItem('user');
+    let user = null;
+    
+    try {
+      user = userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      console.error('Error parsing user data:', e);
+    }
+
+    if (userRole && user) {
+      if (user.role !== userRole) {
+        console.log('Updating user role:', { old: user.role, new: userRole });
         user.role = userRole;
         localStorage.setItem('user', JSON.stringify(user));
       }
@@ -63,7 +85,8 @@ api.interceptors.response.use(
       url: response.config.url,
       status: response.status,
       data: response.data,
-      headers: response.headers
+      headers: response.headers,
+      userRole: user?.role
     });
     return response;
   },
@@ -72,7 +95,8 @@ api.interceptors.response.use(
       url: error.config?.url,
       status: error.response?.status,
       message: error.message,
-      data: error.response?.data
+      data: error.response?.data,
+      userRole: JSON.parse(localStorage.getItem('user') || '{}')?.role
     });
 
     const originalRequest = error.config;
@@ -87,10 +111,14 @@ api.interceptors.response.use(
         if (token) {
           localStorage.setItem('token', token);
           if (user) {
+            console.log('Updating user data after token refresh:', user);
             localStorage.setItem('user', JSON.stringify(user));
           }
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          if (user?.role) {
+            originalRequest.headers['X-User-Role'] = user.role;
+          }
           return api(originalRequest);
         }
       } catch (refreshError) {
@@ -211,6 +239,94 @@ export const menteeService = {
 
 // Session services
 export const sessionService = {
+  getSessionRequests: async () => {
+    try {
+      console.log('Calling getSessionRequests endpoint...');
+      const response = await api.get('/sessionrequests');
+      console.log('Session requests response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Error in getSessionRequests:', error);
+      throw error;
+    }
+  },
+
+  getDashboardSessions: async () => {
+    try {
+      console.log('Fetching dashboard sessions...');
+      const response = await api.get('/sessionrequests/dashboard');
+      console.log('Dashboard sessions response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in getDashboardSessions:', error);
+      throw error;
+    }
+  },
+
+  handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      console.log('Current user before request:', { role: user.role, id: user.id });
+
+      // Validate user role and action
+      if (!user.role) {
+        throw new Error('User role not found');
+      }
+
+      if ((['approved', 'rejected'].includes(status) && user.role !== 'mentor') ||
+          (status === 'cancelled' && user.role !== 'mentee')) {
+        throw new Error(`You do not have permission to ${status} this request. Required role: ${
+          ['approved', 'rejected'].includes(status) ? 'mentor' : 'mentee'
+        }`);
+      }
+
+      console.log('Sending session request update:', { requestId, status });
+      const response = await api.put(`/sessionrequests/${requestId}/status`, { 
+        status,
+        role: user.role
+      });
+      
+      console.log('Session request update response:', {
+        data: response.data,
+        headers: response.headers,
+        userRole: user.role
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in handleSessionRequest:', {
+        error,
+        requestId,
+        status,
+        response: error.response?.data,
+        userRole: JSON.parse(localStorage.getItem('user') || '{}')?.role
+      });
+      
+      // Throw a more user-friendly error message
+      if (error.response?.status === 404) {
+        throw new Error('Session request not found or already handled');
+      } else if (error.response?.status === 403) {
+        throw new Error(`You do not have permission to modify this request. Required role: ${error.response.data.requiredRole}`);
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || 'Invalid request');
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Failed to update session request');
+      }
+    }
+  },
+
+  requestSession: async (data: any) => {
+    try {
+      const response = await api.post('/sessions/request', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in requestSession:', error);
+      throw error;
+    }
+  },
+
   getAvailableSessions: async () => {
     try {
       const response = await api.get('/sessions/available');
@@ -238,55 +354,6 @@ export const sessionService = {
     } catch (error) {
       console.error('Error in scheduleSession:', error);
       throw error;
-    }
-  },
-
-  requestSession: async (data: any) => {
-    try {
-      const response = await api.post('/sessions/request', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in requestSession:', error);
-      throw error;
-    }
-  },
-
-  getSessionRequests: async () => {
-    try {
-      console.log('Calling getSessionRequests endpoint...');
-      const response = await api.get('/sessionrequests');
-      console.log('Session requests response:', response);
-      return response.data;
-    } catch (error) {
-      console.error('Error in getSessionRequests:', error);
-      throw error;
-    }
-  },
-
-  handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
-    try {
-      console.log('Sending session request update:', { requestId, status });
-      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
-      console.log('Session request update response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error in handleSessionRequest:', {
-        error,
-        requestId,
-        status,
-        response: error.response?.data
-      });
-      
-      // Throw a more user-friendly error message
-      if (error.response?.status === 404) {
-        throw new Error('Session request not found or already handled');
-      } else if (error.response?.status === 403) {
-        throw new Error('You do not have permission to modify this request');
-      } else if (error.response?.status === 400) {
-        throw new Error(error.response.data.message || 'Invalid request');
-      } else {
-        throw new Error('Failed to update session request');
-      }
     }
   },
 

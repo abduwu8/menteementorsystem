@@ -3,40 +3,25 @@ const router = express.Router();
 const SessionRequest = require('../models/SessionRequest');
 const auth = require('../middleware/auth');
 
-// Get upcoming sessions for the authenticated user
-router.get('/upcoming', auth, async (req, res) => {
-  try {
-    const now = new Date();
-    const query = {
-      mentor: req.user.id,
-      date: { $gte: now },
-      status: { $in: ['approved', 'pending', 'rejected'] }  // Include all relevant statuses
-    };
-
-    console.log('Fetching upcoming sessions with query:', query);
-
-    const sessions = await SessionRequest.find(query)
-      .populate('mentee', 'name email currentRole')
-      .sort({ date: 1, 'timeSlot.startTime': 1 })  // Sort by date and time
-      .lean();
-
-    console.log('Found sessions:', sessions);
-
-    res.json(sessions);
-  } catch (error) {
-    console.error('Error fetching upcoming sessions:', error);
-    res.status(500).json({ message: 'Error fetching upcoming sessions' });
-  }
-});
-
 // Get all session requests for the authenticated user
 router.get('/', auth, async (req, res) => {
   try {
-    const query = req.user.role === 'mentor' 
-      ? { mentor: req.user.id }
-      : { mentee: req.user.id };
+    let query = {};
+    
+    if (req.user.role === 'mentor') {
+      // For mentors, show only pending requests in the sessions page
+      query = { 
+        mentor: req.user.id,
+        status: 'pending'
+      };
+    } else {
+      // For mentees, show all their requests
+      query = { 
+        mentee: req.user.id
+      };
+    }
 
-    console.log('Fetching all sessions with query:', query);
+    console.log('Fetching session requests with query:', query);
 
     const sessions = await SessionRequest.find(query)
       .populate('mentor', 'name email currentRole expertise')
@@ -50,6 +35,33 @@ router.get('/', auth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching sessions:', error);
     res.status(500).json({ message: 'Error fetching sessions' });
+  }
+});
+
+// Get upcoming sessions for the authenticated user's dashboard
+router.get('/dashboard', auth, async (req, res) => {
+  try {
+    const now = new Date();
+    const query = {
+      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id,
+      status: 'approved',
+      date: { $gte: now }
+    };
+
+    console.log('Fetching dashboard sessions with query:', query);
+
+    const sessions = await SessionRequest.find(query)
+      .populate('mentor', 'name email currentRole expertise')
+      .populate('mentee', 'name email currentRole')
+      .sort('date timeSlot.startTime')
+      .lean();
+
+    console.log('Found dashboard sessions:', sessions);
+
+    res.json(sessions);
+  } catch (error) {
+    console.error('Error fetching dashboard sessions:', error);
+    res.status(500).json({ message: 'Error fetching dashboard sessions' });
   }
 });
 
