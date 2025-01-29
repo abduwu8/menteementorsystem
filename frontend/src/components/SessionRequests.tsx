@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { sessionService } from '../services/api';
-import { RiCalendarEventLine } from 'react-icons/ri';
 import Loader from './Loader';
 
 interface SessionRequest {

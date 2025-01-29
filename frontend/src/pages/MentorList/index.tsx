@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { mentorService, sessionService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import SessionRequestForm from '../../components/SessionRequestForm';
-import MentorCard from '../../components/MentorCard';
-import SessionBooking from '../../components/SessionBooking';
 import Loader from '../../components/Loader';
 
 interface TimeSlot {

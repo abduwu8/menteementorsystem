@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { mentorService } from '../services/api';
 import { RiCloseLine, RiCalendarCheckLine, RiTimeLine, RiAlertLine } from 'react-icons/ri';
-import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import Loader from './Loader';
 
 interface TimeSlot {
@@ -49,7 +48,6 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ initialAvailability, on
   const [availability, setAvailability] = useState<DateSchedule[]>(initialAvailability || []);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
