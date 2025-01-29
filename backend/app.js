@@ -27,7 +27,7 @@ app.use(cookieParser());
 
 // Configure CORS
 app.use(cors({
-  origin: true, // Allow same-origin requests
+  origin: process.env.NODE_ENV === 'production' ? true : 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
@@ -49,13 +49,14 @@ app.use('/api/sessionrequests', require('./routes/sessionrequests'));
 app.use('/api/lecture-requests', require('./routes/lectureRequests'));
 app.use('/api/chat', require('./routes/chat'));
 
-// Health check endpoint
+// Health check endpoint with enhanced monitoring
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy',
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     environment: process.env.NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
 

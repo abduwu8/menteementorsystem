@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Determine if we're in production
+const isProduction = import.meta.env.VITE_NODE_ENV === 'production';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',  // Use environment variable with fallback
+  // In production, use relative path since backend is served from the same domain
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -23,6 +27,7 @@ api.interceptors.request.use((config) => {
     method: config.method,
     baseURL: config.baseURL,
     headers: config.headers,
+    environment: import.meta.env.VITE_NODE_ENV
   });
   
   return config;
