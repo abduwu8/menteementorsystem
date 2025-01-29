@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { sessionService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,7 +22,6 @@ interface SessionRequest {
 
 const SessionRequests = (): JSX.Element => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [requests, setRequests] = useState<SessionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
