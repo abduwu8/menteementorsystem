@@ -13,6 +13,7 @@ export default defineConfig({
     })
   ],
   server: {
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -35,8 +36,7 @@ export default defineConfig({
       },
     },
     sourcemap: false,
-    manifest: true,
-    ssrManifest: true
+    manifest: true
   },
   resolve: {
     alias: {
@@ -53,9 +53,9 @@ export default defineConfig({
       'date-fns'
     ]
   },
-  base: './',
+  base: '',
   preview: {
-    port: 5000,
+    port: 5173,
     strictPort: true,
   }
 })

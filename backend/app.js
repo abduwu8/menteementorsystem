@@ -79,51 +79,45 @@ app.get('/api/health', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode');
   
-  const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+  // Resolve paths
+  const frontendBuildPath = path.resolve(__dirname, '../frontend/dist');
   console.log('Frontend build path:', frontendBuildPath);
   
   // Verify build directory exists
   if (fs.existsSync(frontendBuildPath)) {
     console.log('Frontend build directory exists');
     
-    // Serve static files with proper MIME types
-    app.use(express.static(frontendBuildPath, {
-      maxAge: '1y',
-      etag: true,
-      index: false // Don't serve index.html automatically
-    }));
+    // Serve static files
+    app.use(express.static(frontendBuildPath));
 
-    // Handle all routes
-    app.get('*', (req, res, next) => {
-      // Skip API routes
+    // Serve index.html for all non-API routes (SPA support)
+    app.get('/*', (req, res, next) => {
       if (req.path.startsWith('/api')) {
         return next();
       }
-
-      const indexPath = path.join(frontendBuildPath, 'index.html');
       
-      // Verify index.html exists
-      if (fs.existsSync(indexPath)) {
-        console.log('Serving index.html for path:', req.path);
-        // Set proper headers for SPA
-        res.set({
-          'Cache-Control': 'no-cache',
-          'Content-Type': 'text/html',
-        });
-        res.sendFile(indexPath);
-      } else {
-        console.error('index.html not found at:', indexPath);
-        res.status(404).send('Frontend not found');
+      const indexPath = path.join(frontendBuildPath, 'index.html');
+      console.log('Attempting to serve:', indexPath);
+      
+      try {
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          console.error('index.html not found');
+          res.status(404).send('Frontend file not found');
+        }
+      } catch (error) {
+        console.error('Error serving index.html:', error);
+        res.status(500).send('Error serving frontend');
       }
     });
   } else {
-    console.error('Frontend build directory not found at:', frontendBuildPath);
-    app.get('*', (req, res) => {
-      if (!req.path.startsWith('/api')) {
-        res.status(404).send('Frontend build not found');
-      } else {
-        next();
+    console.error('Frontend build directory not found');
+    app.get('/*', (req, res, next) => {
+      if (req.path.startsWith('/api')) {
+        return next();
       }
+      res.status(404).send('Frontend not built');
     });
   }
 }
@@ -145,7 +139,7 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Node environment:', process.env.NODE_ENV);
   console.log('Current working directory:', process.cwd());

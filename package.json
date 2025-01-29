@@ -2,20 +2,22 @@
   "name": "oviedu",
   "version": "1.0.0",
   "description": "OviEdu Mentoring Platform",
-  "main": "backend/index.js",
+  "main": "backend/app.js",
   "scripts": {
     "start": "cd backend && npm start",
     "install-deps": "npm install && cd frontend && npm install --legacy-peer-deps && cd ../backend && npm install --legacy-peer-deps",
+    "clean": "rimraf frontend/dist",
     "build-frontend": "cd frontend && npm run build",
-    "preview-frontend": "cd frontend && npm run preview",
-    "build": "npm run install-deps && npm run build-frontend",
-    "postbuild": "node scripts/verify-build.js",
+    "build": "npm run clean && npm run install-deps && npm run build-frontend",
+    "verify": "node scripts/verify-build.js",
+    "postbuild": "npm run verify",
     "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\""
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.1"
   }
 }
