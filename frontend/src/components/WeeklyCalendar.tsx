@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { mentorService } from '../services/api';
-import { RiAddLine, RiCloseLine, RiCalendarCheckLine, RiTimeLine, RiAlertLine } from 'react-icons/ri';
+import { RiCloseLine, RiCalendarCheckLine, RiTimeLine, RiAlertLine } from 'react-icons/ri';
 
 interface TimeSlot {
   startTime: string;

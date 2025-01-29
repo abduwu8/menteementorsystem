@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -7,10 +6,6 @@ import {
   RiCalendarEventLine,
   RiTeamLine,
   RiTimeLine,
-  RiUserHeartLine,
-  RiUserLine,
-  RiCalendarLine,
-  RiSearchLine,
   RiLogoutBoxLine,
   RiRobot2Line
 } from 'react-icons/ri';
