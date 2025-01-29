@@ -3,31 +3,20 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 
-// Configure CORS before other middleware
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://menteementorsystemm.onrender.com', 'http://localhost:5173']
-    : ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-
-// Debug middleware
+// Enhanced request logging
 app.use((req, res, next) => {
-  console.log('Request details:', {
+  console.log('Incoming Request:', {
     method: req.method,
     url: req.url,
     origin: req.headers.origin,
-    environment: process.env.NODE_ENV
+    host: req.headers.host,
+    authorization: !!req.headers.authorization,
+    environment: process.env.NODE_ENV,
+    path: req.path
   });
   next();
 });
@@ -36,15 +25,22 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+// Configure CORS
+app.use(cors({
+  origin: true, // Allow same-origin requests
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+}));
 
-// API Routes
+// API Routes with error handling
+const wrapAsync = (fn) => {
+  return function(req, res, next) {
+    fn(req, res, next).catch(next);
+  };
+};
+
+// API Routes with logging
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/mentees', require('./routes/mentees'));
@@ -58,6 +54,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy',
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString()
   });
 });
@@ -71,25 +68,46 @@ if (process.env.NODE_ENV === 'production') {
   
   // Handle SPA routing - serve index.html for all non-API routes
   app.get('*', (req, res, next) => {
-    if (req.url.startsWith('/api')) {
+    if (req.path.startsWith('/api')) {
       return next();
     }
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
 }
 
-// Error handling middleware
+// Enhanced error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  console.error('Error details:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
   });
+  
+  res.status(err.status || 500).json({
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
+    error: process.env.NODE_ENV === 'development' ? err : undefined
+  });
+});
+
+// Connect to MongoDB with enhanced error handling
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Successfully connected to MongoDB'))
+.catch(err => {
+  console.error('MongoDB connection error:', {
+    message: err.message,
+    stack: err.stack
+  });
+  process.exit(1);
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log('Node environment:', process.env.NODE_ENV);
-  console.log('Current working directory:', process.cwd());
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('MongoDB URI:', process.env.MONGODB_URI?.substring(0, 20) + '...');
+  console.log('GROQ API Key exists:', !!process.env.GROQ_API_KEY);
 });

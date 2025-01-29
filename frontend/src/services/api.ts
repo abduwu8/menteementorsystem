@@ -1,26 +1,26 @@
 import axios from 'axios';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
 const api = axios.create({
-  baseURL: isDevelopment ? 'http://localhost:5000/api' : '/api',
+  baseURL: '/api',  // Use relative path since both frontend and backend are served from same origin
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  timeout: 10000, // Add timeout
+  timeout: 10000,
 });
 
-// Add request logging
+// Add request logging with more details
 api.interceptors.request.use((config) => {
-  console.log('Making request to:', config.url);
-  console.log('Request method:', config.method);
-  console.log('Environment:', process.env.NODE_ENV);
+  console.log('API Request:', {
+    url: config.url,
+    method: config.method,
+    baseURL: config.baseURL,
+    headers: config.headers,
+  });
   
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('Added auth token to request');
   }
   return config;
 }, (error) => {
@@ -28,34 +28,39 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Handle response errors
+// Enhanced error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
   async (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+      response: error.response?.data
+    });
+
     const originalRequest = error.config;
 
-    // If the error is 401 and we haven't tried to refresh the token yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
       try {
-        // Try to refresh the token
         const response = await api.post('/auth/refresh-token');
         const { token } = response.data;
         
         if (token) {
-          // Store the new token
           localStorage.setItem('token', token);
-          
-          // Update the failed request's Authorization header
           originalRequest.headers.Authorization = `Bearer ${token}`;
-          
-          // Retry the original request
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // If refresh token fails, then logout
-        console.log('Token refresh failed, redirecting to login');
+        console.error('Token refresh failed:', refreshError);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
