@@ -11,7 +11,7 @@ const app = express();
 // Configure CORS - Must be before other middleware
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://menteementorsystemm.onrender.com', 'https://menteementorsystemm.onrender.com/'] 
+    ? true  // Allow same-origin requests in production
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
