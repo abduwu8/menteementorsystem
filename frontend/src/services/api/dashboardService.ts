@@ -1,4 +1,5 @@
-import { api } from '../api';
+import axios from 'axios';
+import { api as sharedApi } from '../api';
 import { sessionService } from '../api';
 
 // Get the current domain and environment
@@ -88,7 +89,7 @@ const dashboardService = {
   // Get mentor's dashboard statistics
   getMentorStats: async (): Promise<DashboardStats> => {
     try {
-      const response = await api.get('/mentors/dashboard/stats');
+      const response = await sharedApi.get('/mentors/dashboard/stats');
       return response.data;
     } catch (error) {
       console.error('Error in getMentorStats:', error);
@@ -100,7 +101,7 @@ const dashboardService = {
   getUpcomingSessions: async (): Promise<Session[]> => {
     try {
       console.log('Fetching upcoming sessions...');
-      const response = await api.get('/sessionrequests/upcoming');
+      const response = await sharedApi.get('/sessionrequests/upcoming');
       
       // Validate and filter out invalid session data
       const sessions = response.data.filter((session: Session) => 

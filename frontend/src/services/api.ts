@@ -267,7 +267,7 @@ export const sessionService = {
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Sending session request update:', { requestId, status });
-      const response = await api.put(`/sessions/requests/${requestId}`, { status });
+      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
       console.log('Session request update response:', response.data);
       return response.data;
     } catch (error: any) {
@@ -312,6 +312,40 @@ export const sessionService = {
     } catch (error) {
       console.error('Error in getBookedSlots:', error);
       throw error;
+    }
+  },
+
+  cancelSession: async (requestId: string) => {
+    try {
+      console.log('Cancelling session request:', requestId);
+      const response = await api.put(`/sessionrequests/${requestId}/status`, { status: 'cancelled' });
+      console.log('Session cancelled successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in cancelSession:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to cancel this session');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session not found or already cancelled');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to cancel session');
+    }
+  },
+
+  completeSession: async (sessionId: string) => {
+    try {
+      console.log('Completing session:', sessionId);
+      const response = await api.post(`/sessionrequests/${sessionId}/complete`);
+      console.log('Session completed successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in completeSession:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to complete this session');
+      } else if (error.response?.status === 404) {
+        throw new Error('Session not found or already completed');
+      }
+      throw new Error(error.response?.data?.message || 'Failed to complete session');
     }
   }
 };
