@@ -22,8 +22,15 @@ const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // Add user role to headers if available
+  if (user && user.role) {
+    config.headers['X-User-Role'] = user.role;
   }
 
   console.log('API Request:', {
@@ -42,10 +49,21 @@ api.interceptors.request.use((config) => {
 // Add response interceptor for better error handling
 api.interceptors.response.use(
   (response) => {
+    // Update user role from response headers if available
+    const userRole = response.headers['x-user-role'];
+    if (userRole) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user && user.role !== userRole) {
+        user.role = userRole;
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+    }
+
     console.log('API Response:', {
       url: response.config.url,
       status: response.status,
-      data: response.data
+      data: response.data,
+      headers: response.headers
     });
     return response;
   },
@@ -64,10 +82,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const response = await api.post('/auth/refresh-token');
-        const { token } = response.data;
+        const { token, user } = response.data;
         
         if (token) {
           localStorage.setItem('token', token);
+          if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+          }
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           originalRequest.headers['Authorization'] = `Bearer ${token}`;
           return api(originalRequest);
