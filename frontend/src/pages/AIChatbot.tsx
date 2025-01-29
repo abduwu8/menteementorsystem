@@ -33,64 +33,37 @@ const AIChatbot: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-    const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-
-    if (!GROQ_API_KEY) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Error: Groq API key is missing. Please check the configuration.' 
-      }]);
-      return;
-    }
-
     const userMessage = input.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'system',
-              content: `You are a helpful AI assistant for an educational mentoring platform called OviEdu. 
-              Your role is to assist both mentors and mentees with their questions about education, career development, 
-              and mentoring relationships. You should be professional, encouraging, and provide actionable advice. 
-              Focus on being clear, concise, and helpful. When appropriate, provide examples or step-by-step guidance.`
-            },
-            ...messages.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: userMessage }
-          ],
-          model: 'llama-3.3-70b-versatile',
-          temperature: 0.7,
-          max_tokens: 2048,
-          top_p: 1
-        })
+        body: JSON.stringify({ message: userMessage })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to get response');
+        throw new Error(errorData.error || 'Failed to get response');
       }
 
       const data = await response.json();
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: data.choices[0].message.content 
+        content: data.response 
       }]);
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('Chat error:', error);
       let errorMessage = 'Sorry, I encountered an error. Please try again.';
       
-      if (error.message.includes('API key')) {
-        errorMessage = 'There seems to be an issue with the AI service configuration. Please contact support.';
+      if (error.message.includes('GROQ API key')) {
+        errorMessage = 'The AI service is currently unavailable. Please contact support or try again later.';
       } else if (error.message.includes('Too many requests')) {
         errorMessage = 'The service is currently busy. Please try again in a moment.';
       } else if (error.message.includes('connect')) {
