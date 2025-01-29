@@ -247,7 +247,8 @@ export const sessionService = {
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
-      const response = await api.get('/sessions/requests');
+      const response = await api.get('/sessionrequests');
+      
       // Validate and filter out invalid session data
       const validRequests = response.data.filter((request: Session) => 
         request && 
@@ -261,15 +262,26 @@ export const sessionService = {
       );
       console.log('Session requests response:', validRequests);
       return validRequests;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in getSessionRequests:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to view session requests. Please make sure you are logged in as a mentor.');
+      }
       throw error;
     }
   },
 
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
-    const response = await api.put(`/sessions/requests/${requestId}`, { status });
-    return response.data;
+    try {
+      const response = await api.put(`/sessionrequests/${requestId}`, { status });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in handleSessionRequest:', error);
+      if (error.response?.status === 403) {
+        throw new Error('You do not have permission to handle this request. Please make sure you are logged in as a mentor.');
+      }
+      throw error;
+    }
   },
 
   getBookedSlots: async (mentorId: string, date: string) => {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { sessionService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 interface SessionRequest {
   _id: string;
@@ -20,13 +22,21 @@ interface SessionRequest {
 }
 
 const SessionRequests = (): JSX.Element => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<SessionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Check if user is a mentor
+    if (!user || user.role !== 'mentor') {
+      setError('Only mentors can view session requests');
+      setIsLoading(false);
+      return;
+    }
     fetchRequests();
-  }, []);
+  }, [user]);
 
   const fetchRequests = async () => {
     try {
@@ -42,7 +52,14 @@ const SessionRequests = (): JSX.Element => {
       setRequests(data);
     } catch (err: any) {
       console.error('Error fetching requests:', err);
-      setError(err.message || 'Failed to fetch session requests');
+      const errorMessage = err.message || 'Failed to fetch session requests';
+      setError(errorMessage);
+      
+      // If unauthorized, redirect to login
+      if (err.response?.status === 401) {
+        navigate('/login');
+      }
+      
       setRequests([]);
     } finally {
       setIsLoading(false);
@@ -62,7 +79,13 @@ const SessionRequests = (): JSX.Element => {
       );
     } catch (err: any) {
       console.error('Error handling request:', err);
-      setError(err.message || `Failed to ${status} request`);
+      const errorMessage = err.message || `Failed to ${status} request`;
+      setError(errorMessage);
+      
+      // If unauthorized, redirect to login
+      if (err.response?.status === 401) {
+        navigate('/login');
+      }
     }
   };
 
