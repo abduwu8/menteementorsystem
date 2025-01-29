@@ -117,7 +117,7 @@ export const sessionService = {
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
-      const response = await api.get('/sessions/requests');
+      const response = await api.get('/sessionrequests');
       console.log('Session requests response:', response);
       return response.data;
     } catch (error) {
@@ -156,7 +156,7 @@ export const sessionService = {
   getUpcomingSessions: async () => {
     try {
       console.log('Fetching upcoming sessions...');
-      const response = await api.get('/sessions/upcoming');
+      const response = await api.get('/sessionrequests/upcoming');
       console.log('Upcoming sessions response:', response.data);
       return response.data;
     } catch (error) {
