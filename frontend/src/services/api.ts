@@ -247,7 +247,7 @@ export const sessionService = {
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
-      const response = await api.get('/sessionrequests');
+      const response = await api.get('/mentor-portal/sessionrequests');
       
       // Validate and filter out invalid session data
       const validRequests = response.data.filter((request: Session) => 
@@ -274,7 +274,7 @@ export const sessionService = {
   handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
     try {
       console.log('Handling session request:', { requestId, status });
-      const response = await api.put(`/sessionrequests/${requestId}/status`, { status });
+      const response = await api.put(`/mentor-portal/sessionrequests/${requestId}`, { status });
       console.log('Session request handled successfully:', response.data);
       return response.data;
     } catch (error: any) {
@@ -291,7 +291,7 @@ export const sessionService = {
   completeSession: async (sessionId: string) => {
     try {
       console.log('Completing session:', sessionId);
-      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
+      const response = await api.put(`/mentor-portal/sessionrequests/${sessionId}/complete`);
       console.log('Session completed successfully:', response.data);
       return response.data;
     } catch (error: any) {
@@ -308,7 +308,7 @@ export const sessionService = {
   cancelSession: async (sessionId: string) => {
     try {
       console.log('Cancelling session:', sessionId);
-      const response = await api.put(`/sessionrequests/${sessionId}/status`, { status: 'cancelled' });
+      const response = await api.put(`/mentor-portal/sessionrequests/${sessionId}`, { status: 'cancelled' });
       console.log('Session cancelled successfully:', response.data);
       return response.data;
     } catch (error: any) {
