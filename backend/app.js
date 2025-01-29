@@ -10,14 +10,12 @@ const app = express();
 
 // Configure CORS - Must be before other middleware
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? true  // Allow same-origin requests in production
-    : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: true, // Allow all origins since we're handling same-origin in production
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
   exposedHeaders: ['Set-Cookie'],
-  preflightContinue: true,
+  preflightContinue: false,
   optionsSuccessStatus: 204
 };
 app.use(cors(corsOptions));
