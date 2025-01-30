@@ -189,8 +189,6 @@ export const sessionService = {
       // Throw a more user-friendly error message
       if (error.response?.status === 404) {
         throw new Error('Session request not found or already handled');
-      } else if (error.response?.status === 403) {
-        throw new Error('You do not have permission to modify this request');
       } else if (error.response?.status === 400) {
         throw new Error(error.response.data.message || 'Invalid request');
       } else {
@@ -213,7 +211,7 @@ export const sessionService = {
 
   getBookedSlots: async (mentorId: string, date: string): Promise<TimeSlot[]> => {
     try {
-      const response = await api.get('/sessions/booked-slots', {
+      const response = await api.get('/sessionrequests/booked-slots', {
         params: { mentorId, date }
       });
       return response.data;

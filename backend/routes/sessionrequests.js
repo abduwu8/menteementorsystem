@@ -6,24 +6,9 @@ const auth = require('../middleware/auth');
 // Get all session requests for the authenticated user
 router.get('/', auth, async (req, res) => {
   try {
-    let query = {};
-    
-    if (req.user.role === 'mentor') {
-      // For mentors, show only pending requests in the sessions page
-      query = { 
-        mentor: req.user.id,
-        status: 'pending'
-      };
-    } else {
-      // For mentees, show all their requests
-      query = { 
-        mentee: req.user.id
-      };
-    }
+    console.log('Fetching session requests');
 
-    console.log('Fetching session requests with query:', query);
-
-    const sessions = await SessionRequest.find(query)
+    const sessions = await SessionRequest.find()
       .populate({
         path: 'mentor',
         select: 'name email currentRole expertise',
@@ -54,7 +39,6 @@ router.get('/dashboard', auth, async (req, res) => {
   try {
     const now = new Date();
     const query = {
-      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id,
       status: 'approved',
       date: { $gte: now }
     };
@@ -81,7 +65,6 @@ router.get('/upcoming', auth, async (req, res) => {
   try {
     const now = new Date();
     const query = {
-      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id,
       date: { $gte: now },
       status: 'approved'
     };
@@ -218,14 +201,10 @@ router.post('/:requestId/complete', auth, async (req, res) => {
     const { requestId } = req.params;
     
     // Find the session request
-    const sessionRequest = await SessionRequest.findOne({
-      _id: requestId,
-      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id,
-      status: 'approved'
-    });
+    const sessionRequest = await SessionRequest.findById(requestId);
     
     if (!sessionRequest) {
-      return res.status(404).json({ message: 'Session request not found or not approved' });
+      return res.status(404).json({ message: 'Session request not found' });
     }
 
     // Update status to completed
