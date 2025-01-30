@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import dashboardService from '../services/api/dashboardService';
+import sessionService from '../services/api/sessionService';
 import {
   RiCalendarEventLine,
   RiArrowRightLine,
@@ -68,7 +69,7 @@ const MentorDashboard: React.FC = () => {
       setError(null);
       console.log('Attempting to complete session:', sessionId);
       
-      await dashboardService.completeSession(sessionId);
+      await sessionService.completeSession(sessionId);
       console.log('Session completed successfully');
       
       // Update the local state to remove the completed session
