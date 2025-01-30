@@ -171,32 +171,8 @@ router.put('/:requestId/status', auth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    // First verify the user's role
-    if (!req.user.role) {
-      console.error('User role not found:', req.user);
-      return res.status(403).json({ message: 'User role not found' });
-    }
-
-    // Verify user has permission for this action
-    if ((['approved', 'rejected'].includes(status) && req.user.role !== 'mentor') ||
-        (status === 'cancelled' && req.user.role !== 'mentee')) {
-      console.log('Unauthorized action:', {
-        requestedStatus: status,
-        userRole: req.user.role,
-        allowedRole: ['approved', 'rejected'].includes(status) ? 'mentor' : 'mentee'
-      });
-      return res.status(403).json({ 
-        message: 'You do not have permission to handle this request',
-        role: req.user.role,
-        requiredRole: ['approved', 'rejected'].includes(status) ? 'mentor' : 'mentee'
-      });
-    }
-
     // Find the session request
-    const sessionRequest = await SessionRequest.findOne({
-      _id: requestId,
-      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id
-    });
+    const sessionRequest = await SessionRequest.findById(requestId);
 
     if (!sessionRequest) {
       console.log('Session request not found:', {

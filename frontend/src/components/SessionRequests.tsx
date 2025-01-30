@@ -36,10 +36,8 @@ const SessionRequests = (): JSX.Element => {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    // Check if user is a mentor
-    if (!user || user.role !== 'mentor') {
-      console.log('Unauthorized access attempt:', { userRole: user?.role });
-      navigate('/mentee-dashboard'); // Redirect mentees to their dashboard
+    if (!user) {
+      navigate('/login');
       return;
     }
     fetchRequests();
@@ -78,8 +76,6 @@ const SessionRequests = (): JSX.Element => {
       
       if (err.response?.status === 401) {
         navigate('/login');
-      } else if (err.response?.status === 403) {
-        navigate('/mentee-dashboard');
       }
       
       setRequests([]);
@@ -90,10 +86,6 @@ const SessionRequests = (): JSX.Element => {
 
   const handleRequest = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
-      if (!user || user.role !== 'mentor') {
-        throw new Error('Only mentors can approve or reject session requests');
-      }
-
       setError('');
       setIsUpdating(requestId);
       console.log(`Attempting to ${status} session request:`, requestId);
@@ -112,9 +104,6 @@ const SessionRequests = (): JSX.Element => {
       
       if (err.response?.status === 401) {
         navigate('/login');
-        return;
-      } else if (err.response?.status === 403) {
-        navigate('/mentee-dashboard');
         return;
       }
       
