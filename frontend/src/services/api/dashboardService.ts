@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { api as sharedApi } from '../api';
-import { sessionService } from './sessionService';
+
 
 // Get the current domain and environment
 const isProduction = window.location.hostname === 'menteementorsystemm.onrender.com';
@@ -143,10 +143,7 @@ const dashboardService = {
       console.error('Error in getDashboardSessions:', error);
       throw error;
     }
-  },
-
-  // Use sessionService for completing sessions
-  completeSession: sessionService.completeSession
+  }
 };
 
 export type { DashboardStats, Session };

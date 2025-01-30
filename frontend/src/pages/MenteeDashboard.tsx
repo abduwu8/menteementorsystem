@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { sessionService } from '../services/api';
+import { sessionService } from '../services/api/sessionService';
 import AIChatPopup from '../components/AIChatPopup';
 import { RiCalendarEventLine } from 'react-icons/ri';
 
@@ -76,7 +76,7 @@ const MenteeDashboard = (): JSX.Element => {
     try {
       setError('');
       console.log('Attempting to cancel session:', sessionId);
-      await sessionService.completeSession(sessionId);
+      await sessionService.handleSessionRequest(sessionId, 'cancelled');
       console.log('Session cancelled successfully');
       // Refresh sessions after cancellation
       await fetchSessions();
