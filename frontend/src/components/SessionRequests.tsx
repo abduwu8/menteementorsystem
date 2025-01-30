@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sessionService } from '../services/api';
+import { sessionService } from '../services/api/sessionService';
 import { useAuth } from '../context/AuthContext';
 
 interface TimeSlot {

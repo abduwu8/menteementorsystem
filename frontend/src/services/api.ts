@@ -259,26 +259,6 @@ export const sessionService = {
     }
   },
 
-  scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
-    try {
-      const response = await api.post(`/sessionrequests/${sessionId}/schedule`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in scheduleSession:', error);
-      throw error;
-    }
-  },
-
-  requestSession: async (data: any) => {
-    try {
-      const response = await api.post('/sessionrequests', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in requestSession:', error);
-      throw error;
-    }
-  },
-
   getSessionRequests: async () => {
     try {
       console.log('Calling getSessionRequests endpoint...');
@@ -288,63 +268,6 @@ export const sessionService = {
     } catch (error) {
       console.error('Error in getSessionRequests:', error);
       throw error;
-    }
-  },
-
-  handleSessionRequest: async (requestId: string, status: 'approved' | 'rejected' | 'cancelled') => {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      console.log('Current user before request:', { role: user.role, id: user.id });
-
-      // Validate user role and action
-      if (!user.role) {
-        throw new Error('User role not found');
-      }
-
-      if ((['approved', 'rejected'].includes(status) && user.role !== 'mentor') ||
-          (status === 'cancelled' && user.role !== 'mentee')) {
-        throw new Error(`You do not have permission to ${status} this request. Required role: ${
-          ['approved', 'rejected'].includes(status) ? 'mentor' : 'mentee'
-        }`);
-      }
-
-      console.log('Sending session request update:', { requestId, status });
-      const response = await api.put(`/sessionrequests/${requestId}/status`, { 
-        status,
-        role: user.role
-      });
-      
-      console.log('Session request update response:', {
-        data: response.data,
-        headers: response.headers,
-        userRole: user.role
-      });
-
-      // Trigger a refresh of session requests
-      await sessionService.getSessionRequests();
-      
-      return response.data;
-    } catch (error: any) {
-      console.error('Error in handleSessionRequest:', {
-        error,
-        requestId,
-        status,
-        response: error.response?.data,
-        userRole: JSON.parse(localStorage.getItem('user') || '{}')?.role
-      });
-      
-      // Throw a more user-friendly error message
-      if (error.response?.status === 404) {
-        throw new Error('Session request not found or already handled');
-      } else if (error.response?.status === 403) {
-        throw new Error(`You do not have permission to modify this request. Required role: ${error.response.data.requiredRole}`);
-      } else if (error.response?.status === 400) {
-        throw new Error(error.response.data.message || 'Invalid request');
-      } else if (error.message) {
-        throw new Error(error.message);
-      } else {
-        throw new Error('Failed to update session request');
-      }
     }
   },
 
@@ -372,39 +295,25 @@ export const sessionService = {
     }
   },
 
-  cancelSession: async (requestId: string) => {
+  scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
     try {
-      console.log('Cancelling session request:', requestId);
-      const response = await api.put(`/sessionrequests/${requestId}/status`, { status: 'cancelled' });
-      console.log('Session cancelled successfully:', response.data);
+      const response = await api.post(`/sessionrequests/${sessionId}/schedule`, data);
       return response.data;
-    } catch (error: any) {
-      console.error('Error in cancelSession:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to cancel this session');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session not found or already cancelled');
-      }
-      throw new Error(error.response?.data?.message || 'Failed to cancel session');
+    } catch (error) {
+      console.error('Error in scheduleSession:', error);
+      throw error;
     }
   },
 
-  completeSession: async (sessionId: string) => {
+  requestSession: async (data: any) => {
     try {
-      console.log('Completing session:', sessionId);
-      const response = await api.post(`/sessionrequests/${sessionId}/complete`);
-      console.log('Session completed successfully:', response.data);
+      const response = await api.post('/sessionrequests', data);
       return response.data;
-    } catch (error: any) {
-      console.error('Error in completeSession:', error);
-      if (error.response?.status === 403) {
-        throw new Error('You do not have permission to complete this session');
-      } else if (error.response?.status === 404) {
-        throw new Error('Session not found or already completed');
-      }
-      throw new Error(error.response?.data?.message || 'Failed to complete session');
+    } catch (error) {
+      console.error('Error in requestSession:', error);
+      throw error;
     }
-  }
+  },
 };
 
 // Lecture request services
