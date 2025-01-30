@@ -24,14 +24,25 @@ router.get('/', auth, async (req, res) => {
     console.log('Fetching session requests with query:', query);
 
     const sessions = await SessionRequest.find(query)
-      .populate('mentor', 'name email currentRole expertise')
-      .populate('mentee', 'name email currentRole')
+      .populate({
+        path: 'mentor',
+        select: 'name email currentRole expertise',
+        match: { _id: { $exists: true } }
+      })
+      .populate({
+        path: 'mentee',
+        select: 'name email currentRole',
+        match: { _id: { $exists: true } }
+      })
       .sort('-date')
       .lean();
 
-    console.log('Found sessions:', sessions);
+    // Filter out any sessions where population failed
+    const validSessions = sessions.filter(session => session.mentor && session.mentee);
 
-    res.json(sessions);
+    console.log('Found valid sessions:', validSessions);
+
+    res.json(validSessions);
   } catch (error) {
     console.error('Error fetching sessions:', error);
     res.status(500).json({ message: 'Error fetching sessions' });
