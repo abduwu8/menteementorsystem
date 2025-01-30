@@ -121,6 +121,30 @@ const dashboardService = {
     }
   },
 
+  // Get all sessions for dashboard
+  getDashboardSessions: async (): Promise<Session[]> => {
+    try {
+      console.log('Fetching dashboard sessions...');
+      const response = await sharedApi.get('/sessionrequests/dashboard');
+      
+      // Validate and filter out invalid session data
+      const sessions = response.data.filter((session: Session) => 
+        session && 
+        session._id && 
+        session.mentee && 
+        session.mentee.name && 
+        session.date && 
+        session.timeSlot
+      );
+
+      console.log('Filtered dashboard sessions:', sessions);
+      return sessions;
+    } catch (error) {
+      console.error('Error in getDashboardSessions:', error);
+      throw error;
+    }
+  },
+
   // Use sessionService for completing sessions
   completeSession: sessionService.completeSession
 };

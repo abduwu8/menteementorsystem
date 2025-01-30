@@ -241,7 +241,7 @@ export const menteeService = {
 export const sessionService = {
   getAvailableSessions: async () => {
     try {
-      const response = await api.get('/sessions/available');
+      const response = await api.get('/sessionrequests/available');
       return response.data;
     } catch (error) {
       console.error('Error in getAvailableSessions:', error);
@@ -251,7 +251,7 @@ export const sessionService = {
 
   getMySessions: async () => {
     try {
-      const response = await api.get('/sessions');
+      const response = await api.get('/sessionrequests');
       return response.data;
     } catch (error) {
       console.error('Error in getMySessions:', error);
@@ -261,7 +261,7 @@ export const sessionService = {
 
   scheduleSession: async (sessionId: string, data: { mentorId: string; slotId: string }) => {
     try {
-      const response = await api.post(`/sessions/${sessionId}/schedule`, data);
+      const response = await api.post(`/sessionrequests/${sessionId}/schedule`, data);
       return response.data;
     } catch (error) {
       console.error('Error in scheduleSession:', error);
@@ -271,7 +271,7 @@ export const sessionService = {
 
   requestSession: async (data: any) => {
     try {
-      const response = await api.post('/sessions/request', data);
+      const response = await api.post('/sessionrequests', data);
       return response.data;
     } catch (error) {
       console.error('Error in requestSession:', error);
@@ -362,7 +362,7 @@ export const sessionService = {
 
   getBookedSlots: async (mentorId: string, date: string) => {
     try {
-      const response = await api.get('/sessions/booked-slots', {
+      const response = await api.get('/sessionrequests/booked-slots', {
         params: { mentorId, date }
       });
       return response.data;
