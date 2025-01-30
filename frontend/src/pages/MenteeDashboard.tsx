@@ -69,16 +69,20 @@ const MenteeDashboard = (): JSX.Element => {
   };
 
   const handleCancelSession = async (sessionId: string) => {
+    // Add confirmation dialog
+    const confirmed = window.confirm('Are you sure you want to cancel this session?');
+    if (!confirmed) return;
+
     try {
       setError('');
       console.log('Attempting to cancel session:', sessionId);
-      await sessionService.cancelSession(sessionId);
+      await sessionService.completeSession(sessionId);
       console.log('Session cancelled successfully');
       // Refresh sessions after cancellation
       await fetchSessions();
     } catch (err: any) {
       console.error('Error cancelling session:', err);
-      setError(err.message || 'Failed to cancel session');
+      setError(err.response?.data?.message || err.message || 'Failed to cancel session');
     }
   };
 

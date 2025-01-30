@@ -219,7 +219,17 @@ export const sessionService = {
       console.error('Error in getBookedSlots:', error);
       throw error;
     }
-  }
+  },
+
+  completeSession: async (sessionId: string) => {
+    try {
+      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
+      return response.data;
+    } catch (error) {
+      console.error('Error in completeSession:', error);
+      throw error;
+    }
+  },
 };
 
 export default sessionService; 
