@@ -211,7 +211,7 @@ export const sessionService = {
 
   getBookedSlots: async (mentorId: string, date: string): Promise<TimeSlot[]> => {
     try {
-      const response = await api.get('/sessionrequests/booked-slots', {
+      const response = await api.get('/sessionrequests/available', {
         params: { mentorId, date }
       });
       return response.data;

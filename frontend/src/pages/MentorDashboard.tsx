@@ -236,11 +236,11 @@ const MentorDashboard: React.FC = () => {
                           >
                             {completingSession === session._id ? (
                               <>
-                                <span>Completing...</span>
+                                <span>Completed</span>
                                 <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                               </>
                             ) : (
-                              <span>Complete</span>
+                              <span>Completed</span>
                             )}
                           </button>
                         )}
