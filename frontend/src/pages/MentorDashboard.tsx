@@ -214,37 +214,6 @@ const MentorDashboard: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          session.status === 'approved' 
-                            ? 'bg-green-100 text-green-800' 
-                            : session.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                        </span>
-                        {session.status === 'approved' && (
-                          <button
-                            onClick={() => handleCompleteSession(session._id)}
-                            disabled={completingSession === session._id}
-                            className={`px-3 py-1 text-xs rounded-lg font-medium 
-                              ${completingSession === session._id
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                              } transition-colors duration-200 flex items-center space-x-1`}
-                          >
-                            {completingSession === session._id ? (
-                              <>
-                                <span>Completed</span>
-                                <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                              </>
-                            ) : (
-                              <span>Completed</span>
-                            )}
-                          </button>
-                        )}
-                      </div>
                     </div>
                   ))
               )}

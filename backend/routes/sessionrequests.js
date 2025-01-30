@@ -200,20 +200,53 @@ router.post('/:requestId/complete', auth, async (req, res) => {
   try {
     const { requestId } = req.params;
     
+    console.log('Completing session request:', {
+      requestId,
+      userId: req.user.id,
+      userRole: req.user.role
+    });
+
     // Find the session request
     const sessionRequest = await SessionRequest.findById(requestId);
     
     if (!sessionRequest) {
+      console.log('Session request not found:', { requestId });
       return res.status(404).json({ message: 'Session request not found' });
+    }
+
+    // Verify session is in approved state
+    if (sessionRequest.status !== 'approved') {
+      console.log('Invalid session status for completion:', {
+        requestId,
+        currentStatus: sessionRequest.status
+      });
+      return res.status(400).json({ 
+        message: 'Only approved sessions can be marked as completed'
+      });
     }
 
     // Update status to completed
     sessionRequest.status = 'completed';
     await sessionRequest.save();
+
+    // Return the updated session request with populated fields
+    const updatedRequest = await SessionRequest.findById(requestId)
+      .populate('mentor', 'name email currentRole expertise')
+      .populate('mentee', 'name email currentRole')
+      .lean();
     
-    res.json({ message: 'Session marked as completed successfully' });
+    console.log('Session completed successfully:', {
+      requestId,
+      sessionData: updatedRequest
+    });
+
+    res.json(updatedRequest);
   } catch (error) {
-    console.error('Error completing session:', error);
+    console.error('Error completing session:', {
+      error: error.message,
+      stack: error.stack,
+      requestId: req.params.requestId
+    });
     res.status(500).json({ message: 'Failed to complete session' });
   }
 });

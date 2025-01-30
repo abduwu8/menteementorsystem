@@ -223,7 +223,7 @@ export const sessionService = {
 
   completeSession: async (sessionId: string) => {
     try {
-      const response = await api.put(`/sessionrequests/${sessionId}/complete`);
+      const response = await api.post(`/sessionrequests/${sessionId}/complete`);
       return response.data;
     } catch (error) {
       console.error('Error in completeSession:', error);
