@@ -168,18 +168,38 @@ router.put('/:requestId', auth, async (req, res) => {
     const { requestId } = req.params;
     const { status } = req.body;
 
+    console.log('Updating session request:', {
+      requestId,
+      status,
+      userId: req.user._id,
+      userRole: req.user.role
+    });
+
     if (!['approved', 'rejected', 'cancelled'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    // Find the session request and verify ownership
-    const sessionRequest = await SessionRequest.findOne({
-      _id: requestId,
-      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id
-    });
+    // First find the session request without any conditions to check if it exists
+    const sessionRequest = await SessionRequest.findById(requestId);
 
     if (!sessionRequest) {
       return res.status(404).json({ message: 'Session request not found' });
+    }
+
+    // Then verify if the user has permission to handle this request
+    if (
+      (req.user.role === 'mentor' && sessionRequest.mentor.toString() !== req.user._id.toString()) ||
+      (req.user.role === 'mentee' && sessionRequest.mentee.toString() !== req.user._id.toString())
+    ) {
+      return res.status(403).json({ message: 'Not authorized to handle this request' });
+    }
+
+    // Check if the request is already handled
+    if (sessionRequest.status !== 'pending' && status !== 'cancelled') {
+      return res.status(400).json({ 
+        message: 'Session request has already been handled',
+        currentStatus: sessionRequest.status
+      });
     }
 
     // Verify permissions based on role and requested status
@@ -190,13 +210,21 @@ router.put('/:requestId', auth, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to perform this action' });
     }
 
+    // Update the status
     sessionRequest.status = status;
     await sessionRequest.save();
 
+    // Return the updated request with populated fields
     const updatedRequest = await SessionRequest.findById(requestId)
       .populate('mentor', 'name email currentRole expertise')
       .populate('mentee', 'name email currentRole')
       .lean();
+
+    console.log('Session request updated successfully:', {
+      requestId,
+      newStatus: status,
+      updatedRequest
+    });
 
     res.json(updatedRequest);
   } catch (error) {
