@@ -6,9 +6,14 @@ const auth = require('../middleware/auth');
 // Get all session requests for the authenticated user
 router.get('/', auth, async (req, res) => {
   try {
-    console.log('Fetching session requests');
+    console.log('Fetching session requests for user:', req.user.id);
 
-    const sessions = await SessionRequest.find()
+    // Build query based on user role
+    const query = req.user.role === 'mentor' 
+      ? { mentor: req.user.id }
+      : { mentee: req.user.id };
+
+    const sessions = await SessionRequest.find(query)
       .populate({
         path: 'mentor',
         select: 'name email currentRole expertise',
@@ -43,6 +48,13 @@ router.get('/dashboard', auth, async (req, res) => {
       date: { $gte: now }
     };
 
+    // Add user-specific filter
+    if (req.user.role === 'mentor') {
+      query.mentor = req.user.id;
+    } else {
+      query.mentee = req.user.id;
+    }
+
     console.log('Fetching dashboard sessions with query:', query);
 
     const sessions = await SessionRequest.find(query)
@@ -68,6 +80,13 @@ router.get('/upcoming', auth, async (req, res) => {
       date: { $gte: now },
       status: 'approved'
     };
+
+    // Add user-specific filter
+    if (req.user.role === 'mentor') {
+      query.mentor = req.user.id;
+    } else {
+      query.mentee = req.user.id;
+    }
 
     console.log('Fetching upcoming sessions with query:', query);
 
@@ -113,6 +132,11 @@ router.post('/', auth, async (req, res) => {
   try {
     const { mentorId, date, timeSlot, topic, description } = req.body;
 
+    // Verify user is a mentee
+    if (req.user.role !== 'mentee') {
+      return res.status(403).json({ message: 'Only mentees can create session requests' });
+    }
+
     const sessionRequest = new SessionRequest({
       mentee: req.user.id,
       mentor: mentorId,
@@ -138,45 +162,36 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update session request status
-router.put('/:requestId/status', auth, async (req, res) => {
+router.put('/:requestId', auth, async (req, res) => {
   try {
     const { requestId } = req.params;
     const { status } = req.body;
-
-    console.log('Updating session request:', {
-      requestId,
-      status,
-      userRole: req.user.role,
-      userId: req.user.id
-    });
 
     if (!['approved', 'rejected', 'cancelled'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    // Find the session request
-    const sessionRequest = await SessionRequest.findById(requestId);
+    // Find the session request and verify ownership
+    const sessionRequest = await SessionRequest.findOne({
+      _id: requestId,
+      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id
+    });
 
     if (!sessionRequest) {
-      console.log('Session request not found:', {
-        requestId,
-        userId: req.user.id,
-        userRole: req.user.role
-      });
       return res.status(404).json({ message: 'Session request not found' });
     }
 
-    // Update the status
+    // Verify permissions based on role and requested status
+    if (
+      (req.user.role === 'mentor' && !['approved', 'rejected'].includes(status)) ||
+      (req.user.role === 'mentee' && status !== 'cancelled')
+    ) {
+      return res.status(403).json({ message: 'Unauthorized to perform this action' });
+    }
+
     sessionRequest.status = status;
     await sessionRequest.save();
 
-    console.log('Session request updated successfully:', {
-      requestId,
-      newStatus: status,
-      userRole: req.user.role
-    });
-
-    // Return the updated session request with populated fields
     const updatedRequest = await SessionRequest.findById(requestId)
       .populate('mentor', 'name email currentRole expertise')
       .populate('mentee', 'name email currentRole')
@@ -184,13 +199,7 @@ router.put('/:requestId/status', auth, async (req, res) => {
 
     res.json(updatedRequest);
   } catch (error) {
-    console.error('Error updating session request:', {
-      error: error.message,
-      stack: error.stack,
-      requestId: req.params.requestId,
-      userId: req.user?.id,
-      userRole: req.user?.role
-    });
+    console.error('Error updating session request:', error);
     res.status(500).json({ message: 'Error updating session request' });
   }
 });
@@ -206,8 +215,11 @@ router.post('/:requestId/complete', auth, async (req, res) => {
       userRole: req.user.role
     });
 
-    // Find the session request
-    const sessionRequest = await SessionRequest.findById(requestId);
+    // Find the session request and verify ownership
+    const sessionRequest = await SessionRequest.findOne({
+      _id: requestId,
+      [req.user.role === 'mentor' ? 'mentor' : 'mentee']: req.user.id
+    });
     
     if (!sessionRequest) {
       console.log('Session request not found:', { requestId });

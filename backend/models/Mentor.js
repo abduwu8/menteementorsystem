@@ -47,10 +47,14 @@ const availableSlotSchema = new mongoose.Schema({
     required: [true, 'Date is required'],
     validate: {
       validator: function(v) {
-        // Ensure date is not in the past
-        return v >= new Date().setHours(0, 0, 0, 0);
+        // Ensure date is not in the past and not more than 30 days in the future
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const thirtyDaysFromNow = new Date(now);
+        thirtyDaysFromNow.setDate(now.getDate() + 30);
+        return v >= now && v <= thirtyDaysFromNow;
       },
-      message: 'Date cannot be in the past'
+      message: 'Date must be between tomorrow and 30 days from now'
     }
   },
   timeSlots: {
@@ -66,7 +70,11 @@ const availableSlotSchema = new mongoose.Schema({
           return timeA - timeB;
         });
 
-        // Check for overlapping slots
+        // Check for overlapping slots and maximum slots per day
+        if (sortedSlots.length > 5) {
+          return false;
+        }
+
         for (let i = 1; i < sortedSlots.length; i++) {
           const prevEnd = new Date(`1970-01-01T${sortedSlots[i-1].endTime}`);
           const currentStart = new Date(`1970-01-01T${sortedSlots[i].startTime}`);
@@ -76,7 +84,7 @@ const availableSlotSchema = new mongoose.Schema({
         }
         return true;
       },
-      message: 'Time slots cannot overlap'
+      message: 'Time slots cannot overlap and maximum 5 slots per day are allowed'
     }
   }
 }, { _id: false });
