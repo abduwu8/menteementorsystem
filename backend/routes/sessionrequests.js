@@ -133,10 +133,11 @@ router.post('/', auth, async (req, res) => {
     const { mentorId, date, timeSlot, topic, description } = req.body;
 
     // Verify user is a mentee
-    if (req.user.role !== 'mentee') {
-      return res.status(403).json({ message: 'Only mentees can create session requests' });
+    if (!req.user || !req.user.role) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
+    // Create the session request
     const sessionRequest = new SessionRequest({
       mentee: req.user.id,
       mentor: mentorId,
