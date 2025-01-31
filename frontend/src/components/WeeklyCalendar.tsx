@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { mentorService } from '../services/api';
-import { RiCloseLine, RiCalendarCheckLine, RiTimeLine, RiAlertLine } from 'react-icons/ri';
+import { RiCalendarCheckLine, RiTimeLine, RiAlertLine } from 'react-icons/ri';
 
 interface TimeSlot {
   startTime: string;
@@ -181,10 +181,6 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ initialAvailability, on
     );
   };
 
-  const getExistingTimeSlotsForDate = (date: string) => {
-    const dateSchedule = availability.find(schedule => schedule.date === date);
-    return dateSchedule?.timeSlots || [];
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
