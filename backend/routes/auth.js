@@ -55,37 +55,47 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create token with role
+    const payload = {
+      id: user.id,
+      role: role
+    };
+
     const token = jwt.sign(
-      { 
-        id: user._id,
-        role: role
-      },
+      payload,
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    // Return user info without password
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    // Set cookie options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    };
 
-    res.json({
-      token,
-      user: {
-        ...userResponse,
-        role
-      }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
+    // Send token as cookie and in response
+    res.cookie('token', token, cookieOptions)
+      .json({
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: role
+        }
+      });
+
+  } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
